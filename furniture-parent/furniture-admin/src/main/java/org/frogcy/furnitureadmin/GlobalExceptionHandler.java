@@ -2,6 +2,7 @@ package org.frogcy.furnitureadmin;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.frogcy.furnitureadmin.user.impl.UserAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,22 @@ import java.util.List;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorDTO handleAdminAlreadyExistsException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.CONFLICT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
 
 
     @ExceptionHandler(ConstraintViolationException.class)
