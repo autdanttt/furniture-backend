@@ -2,6 +2,8 @@ package org.frogcy.furnitureadmin;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.frogcy.furnitureadmin.category.CategoryAlreadyExistsException;
+import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
 import org.frogcy.furnitureadmin.security.jwt.JwtValidationException;
 import org.frogcy.furnitureadmin.user.EmailAlreadyExistsException;
 import org.frogcy.furnitureadmin.user.RoleNotFoundException;
@@ -36,6 +38,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public ErrorDTO handleUserNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+    @ExceptionHandler(CategoryNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleCategoryNotFoundException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());
@@ -109,6 +125,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return error;
     }
 
+    @ExceptionHandler(CategoryAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorDTO handleCategoryAlreadyExistsException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.CONFLICT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
 
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
