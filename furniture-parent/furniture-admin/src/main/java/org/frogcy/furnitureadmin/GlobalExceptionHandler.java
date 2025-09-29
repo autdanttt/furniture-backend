@@ -2,6 +2,10 @@ package org.frogcy.furnitureadmin;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.frogcy.furnitureadmin.security.jwt.JwtValidationException;
+import org.frogcy.furnitureadmin.user.EmailAlreadyExistsException;
+import org.frogcy.furnitureadmin.user.RoleNotFoundException;
+import org.frogcy.furnitureadmin.user.UserNotFoundException;
 import org.frogcy.furnitureadmin.user.impl.UserAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,10 +32,72 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleUserNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
+    @ExceptionHandler(RoleNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleRoleNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(JwtValidationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public ErrorDTO handleJwtValidationException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.UNAUTHORIZED.value());
+        error.setPath(request.getServletPath());
+        error.addError(ex.getMessage());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorDTO handleEmailAlreadyExistsException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.CONFLICT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
-    public ErrorDTO handleAdminAlreadyExistsException(HttpServletRequest request, Exception ex){
+    public ErrorDTO handleUserAlreadyExistsException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());

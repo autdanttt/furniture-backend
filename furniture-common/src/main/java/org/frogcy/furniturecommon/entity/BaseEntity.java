@@ -41,6 +41,5 @@ public abstract class BaseEntity {
     private Boolean deleted = false;
 
     private Date deletedAt;
-
     private Integer deletedById;
 }

@@ -2,19 +2,20 @@ package org.frogcy.furnitureadmin.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
 import java.util.Set;
 
+@Getter
+@Setter
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserCreateDTO {
+public class UserUpdateDTO {
+    @NotNull
+    private Integer id;
     @NotNull
     @Email
     private String email;
@@ -29,4 +30,5 @@ public class UserCreateDTO {
     private String lastName;
     private boolean enabled;
     private Set<Integer> roleIds;
+
 }
