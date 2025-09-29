@@ -27,11 +27,4 @@ public class Category extends BaseEntity{
     private String image;
 
     private boolean enabled;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    private Category parent;
-
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Category> children;
 }

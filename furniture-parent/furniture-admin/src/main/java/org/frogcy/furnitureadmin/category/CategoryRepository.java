@@ -1,10 +1,11 @@
 package org.frogcy.furnitureadmin.category;
 
-import jakarta.validation.constraints.NotNull;
 import org.frogcy.furniturecommon.entity.Category;
-import org.hibernate.validator.constraints.Length;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -22,8 +23,16 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
     @Query("""
         SELECT c FROM Category c
-        WHERE c.alias = :name
+        WHERE c.alias = :alias
         AND c.deleted = false
 """)
     Optional<Category> findByAlias(String alias);
+
+    @Query("""
+        SELECT c FROM Category c
+        WHERE (LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(c.alias) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND c.deleted = false
+""")
+    Page<Category> search(@Param("keyword") String keyword, Pageable pageable);
 }

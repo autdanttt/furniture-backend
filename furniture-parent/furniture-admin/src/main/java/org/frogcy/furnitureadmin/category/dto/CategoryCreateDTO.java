@@ -17,5 +17,4 @@ public class CategoryCreateDTO {
     private String alias;
     @NotNull
     private boolean enabled;
-    private Integer parentId;
 }

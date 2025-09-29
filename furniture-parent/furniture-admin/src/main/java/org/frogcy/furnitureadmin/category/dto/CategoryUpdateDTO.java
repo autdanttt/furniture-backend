@@ -22,5 +22,4 @@ public class CategoryUpdateDTO {
     private String alias;
     @NotNull
     private boolean enabled;
-    private Integer parentId;
 }

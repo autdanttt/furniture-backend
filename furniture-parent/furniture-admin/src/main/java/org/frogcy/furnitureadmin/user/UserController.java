@@ -16,14 +16,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
 @Validated
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -80,9 +79,6 @@ public class UserController {
             @RequestParam(defaultValue = "", required = false) String keyword
     ) {
         PageResponseDTO<UserResponseDTO> response = userService.getAllUser(page, size, sortField, sortDir, keyword);
-
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-
 }
