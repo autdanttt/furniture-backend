@@ -43,7 +43,6 @@ public class CategoryController {
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(defaultValue = "", required = false) String keyword
     ) {
-
         PageResponseDTO<CategoryResponseDTO> response = categoryService.getAllCategory(page, size, sortField, sortDir, keyword);
         return ResponseEntity.ok(response);
     }

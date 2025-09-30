@@ -1,0 +1,13 @@
+package org.frogcy.furnitureadmin.product.dto;
+
+import org.frogcy.furniturecommon.entity.product.ProductImage;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
+
+@Mapper(componentModel = "spring")
+public interface ProductImageMapper {
+    ProductImageMapper INSTANCE = Mappers.getMapper(ProductImageMapper.class);
+
+    ProductImageDTO toDTO(ProductImage productImage);
+}
