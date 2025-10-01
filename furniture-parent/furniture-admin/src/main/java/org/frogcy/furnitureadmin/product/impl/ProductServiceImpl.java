@@ -146,6 +146,27 @@ public class ProductServiceImpl implements ProductService {
         return getProductResponseDTO(product);
     }
 
+    @Override
+    public void delete(Integer id, Integer userLoginId) {
+        Product product = productRepository.findById(id).orElseThrow(
+                () -> new ProductNotFoundException("Product not found with id: " + id)
+        );
+        product.setDeleted(true);
+        product.setDeletedAt(new Date());
+        product.setDeletedById(userLoginId);
+
+        productRepository.save(product);
+    }
+
+    @Override
+    public void changeEnabled(Integer id, boolean enabled) {
+        Product product = productRepository.findById(id).orElseThrow(
+                () -> new ProductNotFoundException("Product not found with id: " + id)
+        );
+        product.setEnabled(enabled);
+        productRepository.save(product);
+    }
+
 
     private List<ProductDetail> getFinalProductDetail(ProductUpdateDTO dto, Product product) {
         List<ProductDetail> finalProductDetail = new ArrayList<>();

@@ -14,4 +14,8 @@ public interface ProductService {
     ProductResponseDTO get(Integer id);
 
     ProductResponseDTO update(ProductUpdateDTO productDto, List<MultipartFile> images);
+
+    void delete(Integer id, Integer userLoginId);
+
+    void changeEnabled(Integer id, boolean enabled);
 }

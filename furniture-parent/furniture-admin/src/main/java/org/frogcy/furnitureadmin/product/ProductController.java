@@ -5,9 +5,12 @@ import jakarta.validation.Valid;
 import org.frogcy.furnitureadmin.product.dto.ProductCreateDTO;
 import org.frogcy.furnitureadmin.product.dto.ProductResponseDTO;
 import org.frogcy.furnitureadmin.product.dto.ProductUpdateDTO;
+import org.frogcy.furnitureadmin.security.CustomUserDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,5 +54,27 @@ public class ProductController {
 
         return new ResponseEntity<>(response, HttpStatus.OK)    ;
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Integer id) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Integer userLoginId = null;
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails user) {
+            userLoginId = user.getUser().getId();
+        }
+        productService.delete(id, userLoginId);
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> changeEnabled(@PathVariable("id") Integer id, @RequestParam("enabled") boolean enabled) {
+        productService.changeEnabled(id, enabled);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
 }
