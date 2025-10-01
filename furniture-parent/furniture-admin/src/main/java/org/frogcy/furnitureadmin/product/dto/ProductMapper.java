@@ -16,4 +16,6 @@ public interface ProductMapper {
 
     ProductResponseDTO toDto(Product product);
 
+    ProductSummaryDTO toSummary(Product product);
+
 }

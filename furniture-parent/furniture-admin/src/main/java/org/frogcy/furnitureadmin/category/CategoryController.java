@@ -28,6 +28,7 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getCategory(@PathVariable("id") Integer id){
         CategoryResponseDTO dto = categoryService.findById(id);

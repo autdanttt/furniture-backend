@@ -2,10 +2,13 @@ package org.frogcy.furnitureadmin.product;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
+import org.frogcy.furnitureadmin.category.dto.CategoryResponseDTO;
 import org.frogcy.furnitureadmin.product.dto.ProductCreateDTO;
 import org.frogcy.furnitureadmin.product.dto.ProductResponseDTO;
+import org.frogcy.furnitureadmin.product.dto.ProductSummaryDTO;
 import org.frogcy.furnitureadmin.product.dto.ProductUpdateDTO;
 import org.frogcy.furnitureadmin.security.CustomUserDetails;
+import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +27,18 @@ public class ProductController {
     private final ProductService productService;
     public ProductController(ProductService productService) {
         this.productService = productService;
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortField,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(defaultValue = "", required = false) String keyword
+    ) {
+        PageResponseDTO<ProductSummaryDTO> response = productService.getAllProduct(page, size, sortField, sortDir, keyword);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

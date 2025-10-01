@@ -3,15 +3,22 @@ package org.frogcy.furnitureadmin.product.impl;
 import org.frogcy.furnitureadmin.category.CategoryAlreadyExistsException;
 import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
 import org.frogcy.furnitureadmin.category.CategoryRepository;
+import org.frogcy.furnitureadmin.category.dto.CategoryMapper;
+import org.frogcy.furnitureadmin.category.dto.CategoryResponseDTO;
 import org.frogcy.furnitureadmin.media.AssetService;
 import org.frogcy.furnitureadmin.product.*;
 import org.frogcy.furnitureadmin.product.dto.*;
+import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.frogcy.furniturecommon.entity.Category;
 import org.frogcy.furniturecommon.entity.product.Product;
 import org.frogcy.furniturecommon.entity.product.ProductDetail;
 import org.frogcy.furniturecommon.entity.product.ProductImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,8 +38,9 @@ public class ProductServiceImpl implements ProductService {
     private final ProductDetailMapper productDetailMapper;
     private final ProductDetailRepository productDetailRepository;
     private final ProductImageMapper productImageMapper;
+    private final CategoryMapper categoryMapper;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, AssetService assetService, ProductImageRepository productImageRepository, CategoryRepository categoryRepository, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageMapper productImageMapper) {
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, AssetService assetService, ProductImageRepository productImageRepository, CategoryRepository categoryRepository, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageMapper productImageMapper, CategoryMapper categoryMapper) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.assetService = assetService;
@@ -41,6 +49,7 @@ public class ProductServiceImpl implements ProductService {
         this.productDetailMapper = productDetailMapper;
         this.productDetailRepository = productDetailRepository;
         this.productImageMapper = productImageMapper;
+        this.categoryMapper = categoryMapper;
     }
 
     @Override
@@ -165,6 +174,35 @@ public class ProductServiceImpl implements ProductService {
         );
         product.setEnabled(enabled);
         productRepository.save(product);
+    }
+
+    @Override
+    public PageResponseDTO<ProductSummaryDTO> getAllProduct(int page, int size, String sortField, String sortDir, String keyword) {
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortField).descending()
+                : Sort.by(sortField).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Product> products = productRepository.search(keyword, pageable);
+
+
+        List<ProductSummaryDTO> productSummaries = products.getContent().stream()
+                .map(product -> {
+                    ProductSummaryDTO productSummaryDTO = productMapper.toSummary(product);
+
+                    CategoryResponseDTO category = categoryMapper.toDto(product.getCategory());
+                    productSummaryDTO.setCategory(category);
+
+                    return productSummaryDTO;
+                }).toList();
+        return new PageResponseDTO<>(
+                productSummaries,
+                products.getNumber(),
+                products.getSize(),
+                products.getTotalElements(),
+                products.getTotalPages()
+        );
     }
 
 
