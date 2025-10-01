@@ -11,5 +11,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ImageOrder {
     private Integer id;
-    private Integer sortOrder;
+    private int position;
 }

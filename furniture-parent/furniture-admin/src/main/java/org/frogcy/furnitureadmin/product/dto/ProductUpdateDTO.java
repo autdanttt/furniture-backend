@@ -53,7 +53,9 @@ public class ProductUpdateDTO {
     @NotNull
     private float weight;
     private List<Integer> newImagesOrder;
+    @NotNull
     private List<ImageOrder> retainedImages;
     private List<ProductDetailCreateDTO> newProductDetails;
+    @NotNull
     private List<Integer> retainedProductDetailIds;
 }

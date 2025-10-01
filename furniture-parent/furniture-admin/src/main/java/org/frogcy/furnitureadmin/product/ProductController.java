@@ -44,12 +44,12 @@ public class ProductController {
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateProduct(
-            @RequestPart("product") ProductUpdateDTO productDto,
-            @RequestPart("image") @Nullable List<MultipartFile> newImages
+            @RequestPart("product") @Valid ProductUpdateDTO productDto,
+            @RequestPart("images") @Nullable List<MultipartFile> newImages
     ){
         ProductResponseDTO response = productService.update(productDto, newImages);
 
-        return null;
+        return new ResponseEntity<>(response, HttpStatus.OK)    ;
     }
 
 }

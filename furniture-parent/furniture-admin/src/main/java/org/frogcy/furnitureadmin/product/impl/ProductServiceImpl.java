@@ -1,5 +1,6 @@
 package org.frogcy.furnitureadmin.product.impl;
 
+import org.frogcy.furnitureadmin.category.CategoryAlreadyExistsException;
 import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
 import org.frogcy.furnitureadmin.category.CategoryRepository;
 import org.frogcy.furnitureadmin.media.AssetService;
@@ -9,16 +10,18 @@ import org.frogcy.furniturecommon.entity.Category;
 import org.frogcy.furniturecommon.entity.product.Product;
 import org.frogcy.furniturecommon.entity.product.ProductDetail;
 import org.frogcy.furniturecommon.entity.product.ProductImage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProductServiceImpl.class);
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
@@ -102,9 +105,129 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO update(ProductUpdateDTO productDto, List<MultipartFile> images) {
+    public ProductResponseDTO update(ProductUpdateDTO dto, List<MultipartFile> newImages) {
+        Product product = productRepository.findById(dto.getId())
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + dto.getId()));
 
-        return null;
+        // check unique name
+        productRepository.findByName(dto.getName())
+                .filter(p -> !p.getId().equals(dto.getId()))
+                .ifPresent(p -> { throw new ProductAlreadyExistsException("Name exists"); });
+
+        // check unique alias
+        productRepository.findByAlias(dto.getAlias())
+                .filter(p -> !p.getId().equals(dto.getId()))
+                .ifPresent(p -> { throw new ProductAlreadyExistsException("Alias exists"); });
+
+        // update common fields
+        productMapper.updateEntityFromDto(dto, product);
+
+        // update images
+        List<ProductImage> finalImages = getFinalImages(dto, newImages, product);
+        if (!finalImages.isEmpty()) {
+            // tìm ảnh có position = 1
+            ProductImage newMainImage = finalImages.stream()
+                    .min(Comparator.comparingInt(ProductImage::getPosition))
+                    .orElse(null);
+
+            if (newMainImage != null) {
+                product.setMainImage(newMainImage);
+            }
+        }
+        product.getImages().clear();
+        product.getImages().addAll(finalImages);
+
+        // update details
+        List<ProductDetail> finalDetails = getFinalProductDetail(dto, product);
+        product.getDetails().clear();
+        product.getDetails().addAll(finalDetails);
+
+        product = productRepository.save(product);
+        return getProductResponseDTO(product);
+    }
+
+
+    private List<ProductDetail> getFinalProductDetail(ProductUpdateDTO dto, Product product) {
+        List<ProductDetail> finalProductDetail = new ArrayList<>();
+        Map<Integer, ProductDetail> currentProductDetailMap = product.getDetails().stream()
+                .collect(Collectors.toMap(ProductDetail::getId, Function.identity()));
+
+        if(dto.getRetainedProductDetailIds() != null){
+            for(Integer id : dto.getRetainedProductDetailIds()){
+                ProductDetail productDetail = currentProductDetailMap.get(id);
+                if(productDetail != null){
+                    finalProductDetail.add(productDetail);
+                }
+            }
+        }
+
+        if(dto.getNewProductDetails() != null){
+            for(int i = 0; i < dto.getNewProductDetails().size(); i++){
+                ProductDetail productDetail = productDetailMapper.toEntity(dto.getNewProductDetails().get(i));
+                productDetail.setProduct(product);
+
+                finalProductDetail.add(productDetail);
+            }
+        }
+
+        List<ProductDetail> toRemove = product.getDetails()
+                .stream().filter(detail -> !dto.getRetainedProductDetailIds().contains(detail.getId())).toList();
+
+        for (ProductDetail productDetail : toRemove) {
+            product.getDetails().remove(productDetail);
+        }
+        return finalProductDetail;
+    }
+
+    private List<ProductImage> getFinalImages(ProductUpdateDTO dto, List<MultipartFile> newImages, Product product) {
+        Map<Integer, ProductImage> currentImageMap = product.getImages().stream()
+                .collect(Collectors.toMap(ProductImage::getId, Function.identity()));
+
+        List<ProductImage> finalImages = new ArrayList<>();
+
+        if(dto.getRetainedImages() != null){
+            for(ImageOrder io : dto.getRetainedImages()){
+                ProductImage img = currentImageMap.get(io.getId());
+                if(img != null){
+                    img.setPosition(io.getPosition());
+                    finalImages.add(img);
+                }
+            }
+        }
+
+        LOGGER.info("abs");
+
+        if(newImages != null && !newImages.isEmpty()){
+            LOGGER.info("newImages");
+            for (int i = 0; i < newImages.size(); i++) {
+                MultipartFile file = newImages.get(i);
+                LOGGER.info("Uploading image " + i + " to " + file.getOriginalFilename());
+                int position = dto.getNewImagesOrder() != null && dto.getNewImagesOrder().size() > i ? dto.getNewImagesOrder().get(i) : (finalImages.size() + 1);
+                String url = assetService.uploadToCloudinary(file, "product");
+
+                ProductImage productImage = new ProductImage();
+                productImage.setImageUrl(url);
+                productImage.setPosition(position);
+                productImage.setProduct(product);
+
+                finalImages.add(productImage);
+            }
+        }
+
+
+        Set<Integer> retainedIds = dto.getRetainedImages() != null
+                ? dto.getRetainedImages().stream().map(ImageOrder::getId).collect(Collectors.toSet())
+                : Collections.emptySet();
+
+        List<ProductImage> toRemove = product.getImages()
+                .stream().filter(img -> !retainedIds.contains(img.getId()))
+                .toList();
+
+        for (ProductImage productImage : toRemove) {
+            product.getImages().remove(productImage);
+        }
+
+        return finalImages;
     }
 
     private ProductResponseDTO getProductResponseDTO(Product product) {
