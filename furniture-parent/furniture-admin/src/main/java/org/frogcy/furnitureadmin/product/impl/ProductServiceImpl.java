@@ -1,10 +1,10 @@
 package org.frogcy.furnitureadmin.product.impl;
 
-import org.frogcy.furnitureadmin.category.CategoryAlreadyExistsException;
 import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
 import org.frogcy.furnitureadmin.category.CategoryRepository;
 import org.frogcy.furnitureadmin.category.dto.CategoryMapper;
 import org.frogcy.furnitureadmin.category.dto.CategoryResponseDTO;
+import org.frogcy.furnitureadmin.inventory.InventoryService;
 import org.frogcy.furnitureadmin.media.AssetService;
 import org.frogcy.furnitureadmin.product.*;
 import org.frogcy.furnitureadmin.product.dto.*;
@@ -39,8 +39,9 @@ public class ProductServiceImpl implements ProductService {
     private final ProductDetailRepository productDetailRepository;
     private final ProductImageMapper productImageMapper;
     private final CategoryMapper categoryMapper;
+    private final InventoryService inventoryService;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, AssetService assetService, ProductImageRepository productImageRepository, CategoryRepository categoryRepository, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageMapper productImageMapper, CategoryMapper categoryMapper) {
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, AssetService assetService, ProductImageRepository productImageRepository, CategoryRepository categoryRepository, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageMapper productImageMapper, CategoryMapper categoryMapper, InventoryService inventoryService) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.assetService = assetService;
@@ -50,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
         this.productDetailRepository = productDetailRepository;
         this.productImageMapper = productImageMapper;
         this.categoryMapper = categoryMapper;
+        this.inventoryService = inventoryService;
     }
 
     @Override
@@ -291,6 +293,9 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductResponseDTO getProductResponseDTO(Product product) {
         ProductResponseDTO productResponseDTO = productMapper.toDto(product);
+
+        productResponseDTO.setInStock(inventoryService.inStock(product));
+
         List<ProductImageDTO> productImageDTOs = new ArrayList<>();
         List<ProductImage> listProductImages = productImageRepository.findAllByProductId(product.getId());
         listProductImages.sort(Comparator.comparing(ProductImage::getPosition));

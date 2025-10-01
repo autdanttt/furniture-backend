@@ -1,5 +1,4 @@
-package org.frogcy.furnitureadmin.product.dto;
-
+package org.frogcy.furnitureadmin.inventory;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductDetailUpdateDTO {
-    private String name;
-    private String value;
+public class InventoryRequestDTO {
+    private Integer quantity;
+    private String note;
 }

@@ -31,8 +31,6 @@ public class ProductCreateDTO {
     @NotNull
     private boolean enabled;
     @NotNull
-    private boolean inStock;
-    @NotNull
     @Range(min = 0, message = "Cost must be greater than 0")
     private Long cost;
     @NotNull

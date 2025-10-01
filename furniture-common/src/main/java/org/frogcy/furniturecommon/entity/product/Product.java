@@ -30,7 +30,6 @@ public class Product extends BaseEntity {
     @Column(length = 4096, nullable = false, name = "full_description")
     private String fullDescription;
     private boolean enabled;
-    private boolean inStock;
     private Long cost;
     private Long price;
     @Column(name = "discount_percent")
