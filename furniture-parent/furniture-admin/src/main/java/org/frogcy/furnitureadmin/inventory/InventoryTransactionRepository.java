@@ -10,4 +10,6 @@ import java.util.Optional;
 @Repository
 public interface InventoryTransactionRepository extends JpaRepository<InventoryTransaction, Integer> {
     Optional<InventoryTransaction> findByInventoryId(Integer inventoryId);
+
+    InventoryTransaction findTopByInventory_IdOrderByTransactionDateDesc(Integer inventoryId);
 }

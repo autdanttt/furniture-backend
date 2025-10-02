@@ -85,9 +85,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         product = productRepository.findById(productId).get();
         Inventory inventory = inventoryRepository.findByProduct(product).get();
-        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findByInventoryId(inventory.getId()).orElseThrow(
-                () -> new InventoryTransactionNotFoundException("No inventory transaction found for id: " + inventory.getId())
-        );
+        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findTopByInventory_IdOrderByTransactionDateDesc(inventory.getId());
 
         return getInventoryResponseDTO(inventory, product, inventoryTransaction);
     }
@@ -101,15 +99,13 @@ public class InventoryServiceImpl implements InventoryService {
 
         product = productRepository.findById(productId).get();
         Inventory inventory = inventoryRepository.findByProduct(product).get();
-        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findByInventoryId(inventory.getId()).orElseThrow(
-                () -> new InventoryTransactionNotFoundException("No inventory transaction found for id: " + inventory.getId())
-        );
+        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findTopByInventory_IdOrderByTransactionDateDesc(inventory.getId());
 
         return getInventoryResponseDTO(inventory, product, inventoryTransaction);
     }
 
     @Override
-    public InventoryResponseDTO update(Integer productId, InventoryUpdateDTO dto) {
+    public InventoryResponseDTO update(Integer productId, InventoryRequestDTO dto) {
         Product product = productRepository.findById(productId).orElseThrow(
                 () -> new ProductNotFoundException("No product found for id: " + productId)
         );
@@ -118,10 +114,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         product = productRepository.findById(productId).get();
         Inventory inventory = inventoryRepository.findByProduct(product).get();
-        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findByInventoryId(inventory.getId()).orElseThrow(
-                () -> new InventoryTransactionNotFoundException("No inventory transaction found for id: " + inventory.getId())
-        );
-
+        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findTopByInventory_IdOrderByTransactionDateDesc(inventory.getId());
         return getInventoryResponseDTO(inventory, product, inventoryTransaction);
     }
 
@@ -134,14 +127,12 @@ public class InventoryServiceImpl implements InventoryService {
         Inventory inventory = inventoryRepository.findByProduct(product)
                 .orElseThrow(() -> new InventoryNotFoundException("No inventory found for product id: " + productId));
 
-        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findByInventoryId(inventory.getId()).orElseThrow(
-                () -> new InventoryTransactionNotFoundException("No inventory transaction found for id: " + inventory.getId())
-        );
+        InventoryTransaction inventoryTransaction = inventoryTransactionRepository.findTopByInventory_IdOrderByTransactionDateDesc(inventory.getId());
 
         return getInventoryResponseDTO(inventory, product, inventoryTransaction);
     }
 
-    private void updateProductQuantity(InventoryUpdateDTO dto, Product product) {
+    private void updateProductQuantity(InventoryRequestDTO dto, Product product) {
         Inventory inventory = inventoryRepository.findByProduct(product)
                 .orElseGet(() -> {
                     Inventory inv = new Inventory();
@@ -149,16 +140,19 @@ public class InventoryServiceImpl implements InventoryService {
                     inv.setQuantity(0);
                     return inventoryRepository.save(inv);
                 });
+        int oldQuantity = inventory.getQuantity();
+        int newQuantity = dto.getQuantity();
 
         inventory.setQuantity(dto.getQuantity());
         inventory.setLastUpdated(new Date());
+
         inventoryRepository.save(inventory);
 
         InventoryTransaction tx = new InventoryTransaction();
         tx.setInventory(inventory);
-        tx.setQuantityChanged(Math.abs(dto.getQuantity() - inventory.getQuantity()));
-        tx.setType(InventoryTransactionType.IMPORT);
-        tx.setNote("");
+        tx.setQuantityChanged(newQuantity - oldQuantity);
+        tx.setType(InventoryTransactionType.ADJUST);
+        tx.setNote(dto.getNote());
         transactionRepository.save(tx);
     }
 
@@ -167,7 +161,7 @@ public class InventoryServiceImpl implements InventoryService {
         response.setId(inventory.getId());
         response.setProductId(product.getId());
         response.setProductName(product.getName());
-        response.setType(InventoryTransactionType.IMPORT);
+        response.setType(inventoryTransaction.getType());
         response.setQuantity(inventory.getQuantity());
         response.setQuantityChanged(inventoryTransaction.getQuantityChanged());
         response.setTransactionDate(inventoryTransaction.getTransactionDate());

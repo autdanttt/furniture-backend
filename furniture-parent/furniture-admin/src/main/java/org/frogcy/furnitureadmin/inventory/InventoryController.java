@@ -17,20 +17,20 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
-    @GetMapping("/{productId}/import")
+    @PostMapping("/{productId}/import")
     public ResponseEntity<?> importProduct(@PathVariable("productId") Integer productId, @RequestBody @Valid InventoryRequestDTO dto) {
         InventoryResponseDTO response = inventoryService.importProduct(productId, dto);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/{productId}/export")
+    @PostMapping("/{productId}/export")
     public ResponseEntity<?> exportProduct(@PathVariable("productId") Integer productId, @RequestBody @Valid InventoryRequestDTO dto) {
         InventoryResponseDTO response = inventoryService.exportProduct(productId, dto);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PutMapping("/{productId}")
-    public ResponseEntity<?> updateQuantity(@PathVariable("productId") Integer productId,@RequestBody @Valid InventoryUpdateDTO dto){
+    public ResponseEntity<?> updateQuantity(@PathVariable("productId") Integer productId,@RequestBody @Valid InventoryRequestDTO dto){
         InventoryResponseDTO response = inventoryService.update(productId, dto);
 
         return new ResponseEntity<>(response, HttpStatus.OK);

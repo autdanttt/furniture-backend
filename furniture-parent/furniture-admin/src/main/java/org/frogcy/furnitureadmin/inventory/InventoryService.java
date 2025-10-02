@@ -10,7 +10,7 @@ public interface InventoryService {
 
     InventoryResponseDTO exportProduct(Integer productId, InventoryRequestDTO dto);
 
-    InventoryResponseDTO update(Integer productId, @Valid InventoryUpdateDTO dto);
+    InventoryResponseDTO update(Integer productId, @Valid InventoryRequestDTO dto);
 
     InventoryResponseDTO get(Integer productId);
 }
