@@ -22,7 +22,8 @@ public class RoleRepositoryTests {
     }
     @Test
     public void testCreateUserRole() {
-
+        Role customer = Role.builder().name("ROLE_CUSTOMER").description("Default role for customers with basic access to the system.").build();
+        roleRepository.save(customer);
     }
     @Test
     public void testCreateMultipleRoles(){
