@@ -4,8 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.frogcy.furnitureadmin.category.CategoryAlreadyExistsException;
 import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
+import org.frogcy.furnitureadmin.inventory.InsufficientStockException;
+import org.frogcy.furnitureadmin.inventory.InventoryNotFoundException;
+import org.frogcy.furnitureadmin.inventory.InventoryTransactionNotFoundException;
 import org.frogcy.furnitureadmin.product.ProductAlreadyExistsException;
-import org.frogcy.furnitureadmin.product.impl.ProductNotFoundException;
+import org.frogcy.furnitureadmin.product.ProductNotFoundException;
 import org.frogcy.furnitureadmin.security.jwt.JwtValidationException;
 import org.frogcy.furnitureadmin.user.EmailAlreadyExistsException;
 import org.frogcy.furnitureadmin.user.RoleNotFoundException;
@@ -35,6 +38,53 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+
+
+    @ExceptionHandler(InsufficientStockException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    @ResponseBody
+    public ErrorDTO handleInsufficientStockException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(InventoryNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleInventoryNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
+    @ExceptionHandler(InventoryTransactionNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleInventoryTransactionNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
 
     @ExceptionHandler(UserNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
