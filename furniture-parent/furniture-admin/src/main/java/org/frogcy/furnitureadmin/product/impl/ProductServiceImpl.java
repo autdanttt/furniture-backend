@@ -192,8 +192,10 @@ public class ProductServiceImpl implements ProductService {
         List<ProductSummaryDTO> productSummaries = products.getContent().stream()
                 .map(product -> {
                     ProductSummaryDTO productSummaryDTO = productMapper.toSummary(product);
+                    boolean inStock = inventoryService.inStock(product);
 
                     CategoryResponseDTO category = categoryMapper.toDto(product.getCategory());
+                    productSummaryDTO.setInStock(inStock);
                     productSummaryDTO.setCategory(category);
 
                     return productSummaryDTO;

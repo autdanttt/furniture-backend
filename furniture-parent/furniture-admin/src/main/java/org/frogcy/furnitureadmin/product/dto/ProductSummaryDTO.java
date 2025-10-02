@@ -17,6 +17,7 @@ public class ProductSummaryDTO {
     private String alias;
     private boolean enabled;
     private Long price;
+    private boolean inStock;
     private Integer discountPercent;
     private Long finalPrice;
     private ProductImage mainImage;
