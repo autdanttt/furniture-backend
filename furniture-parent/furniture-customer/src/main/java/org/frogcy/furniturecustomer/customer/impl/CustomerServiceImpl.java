@@ -7,16 +7,20 @@ import org.frogcy.furniturecommon.entity.Role;
 import org.frogcy.furniturecustomer.auth.dto.OtpVerifyRequestDTO;
 import org.frogcy.furniturecustomer.auth.dto.ResetPasswordByOtpRequest;
 import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
+import org.frogcy.furniturecustomer.customer.dto.CustomerResponseDTO;
+import org.frogcy.furniturecustomer.customer.dto.CustomerUpdateDTO;
 import org.frogcy.furniturecustomer.email.EmailService;
 import org.frogcy.furniturecustomer.auth.dto.CustomerRegisterDTO;
 import org.frogcy.furniturecustomer.customer.CustomerAlreadyExistException;
 import org.frogcy.furniturecustomer.customer.CustomerRepository;
 import org.frogcy.furniturecustomer.customer.CustomerService;
 import org.frogcy.furniturecustomer.customer.dto.CustomerMapper;
+import org.frogcy.furniturecustomer.media.AssetService;
 import org.frogcy.furniturecustomer.otp.OtpService;
 import org.frogcy.furniturecustomer.security.jwt.JwtUtility;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.swing.text.html.Option;
 import java.util.Optional;
@@ -32,14 +36,16 @@ public class CustomerServiceImpl implements CustomerService {
     private final JwtUtility jwtUtility;
     private final EmailService emailService;
     private final OtpService otpService;
+    private final AssetService assetService;
 
-    public CustomerServiceImpl(CustomerRepository customerRepository, CustomerMapper customerMapper, PasswordEncoder passwordEncoder, JwtUtility jwtUtility, EmailService emailService, OtpService otpService) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, CustomerMapper customerMapper, PasswordEncoder passwordEncoder, JwtUtility jwtUtility, EmailService emailService, OtpService otpService, AssetService assetService) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtility = jwtUtility;
         this.emailService = emailService;
         this.otpService = otpService;
+        this.assetService = assetService;
     }
 
     @Override
@@ -104,6 +110,24 @@ public class CustomerServiceImpl implements CustomerService {
             return "Otp verification success";
         }
         return "Otp verification failed. Try again later";
+    }
+
+    @Override
+    public CustomerResponseDTO updateInformation(CustomerUpdateDTO dto, MultipartFile multipartFile) {
+        Customer customer = customerRepository.findById(dto.getId()).orElseThrow(
+                () -> new CustomerNotFoundException("Customer not found with id " + dto.getId())
+        );
+
+        customerMapper.updateEntityFromDto(dto, customer);
+
+        if (multipartFile != null && !multipartFile.isEmpty()) {
+            String avatarUrl = assetService.uploadToCloudinary(multipartFile, "avatar");
+            customer.setAvatarUrl(avatarUrl);
+        }
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        return customerMapper.toDto(savedCustomer);
     }
 
 }
