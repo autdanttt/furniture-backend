@@ -171,7 +171,7 @@ public class AuthController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyEmail(@RequestBody @Valid OtpVerifyRequestDTO dto) {
-        String message = emailService.verifyEmailByOtp(dto);
+        String message = customerService.verifyEmailByOtp(dto);
         Map<String, String> result = new HashMap<>();
         result.put("message", message);
 
@@ -179,7 +179,7 @@ public class AuthController {
     }
 
 
-    @PatchMapping("/change-password")
+    @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody @Valid ChangePasswordRequest request){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Customer customer = customerRepository.findByEmail(email)
@@ -196,6 +196,31 @@ public class AuthController {
 
         Map<String, String> map = new HashMap<>();
         map.put("message", "Đổi mật khẩu thành công");
+        return ResponseEntity.ok(map);
+    }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body){
+
+        String email = body.get("email");
+
+        customerService.forgotPassword(email);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message","Nếu email tồn tại, mã OTP đã được gửi");
+
+        return ResponseEntity.ok(map);
+    }
+
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordByOtpRequest request){
+        String message = customerService.resetPasswordByOtp(request);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message", message);
+
         return ResponseEntity.ok(map);
     }
 

@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface OtpRepository extends JpaRepository<Otp, Integer> {
     Optional<Otp> findTopByCustomerIdAndTypeAndUsedIsFalseOrderByCreatedAtDesc(Integer customerId, OtpType type);
-    }
+
+}

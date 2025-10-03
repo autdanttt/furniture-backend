@@ -20,6 +20,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -33,9 +34,6 @@ public class EmailService {
     private JavaMailSender mailSender;
     @Value("${spring.mail.username}")
     private String fromEmail;
-    @Autowired
-    private OtpService otpService;
-
 
     public void sendVerificationEmail(String to, String token) {
         String subject = "Xác thực tài khoản";
@@ -104,14 +102,30 @@ public class EmailService {
         }
     }
 
-    public String verifyEmailByOtp(OtpVerifyRequestDTO dto) {
-        Customer customer = customerRepository.findCustomerByEmailAndVerifiedIsFalse(dto.getEmail()).orElseThrow(
-                () -> new CustomerNotFoundException("Customer not found with email " + dto.getEmail())
-        );
 
-        if(otpService.verifyOtp(customer, dto.getOtp(), OtpType.REGISTER)){
-            return "Otp verification success";
+    public void sendPasswordResetOtp(String to, String otpCode) {
+
+        String subject = "Mã xác thực đặt lại mật khẩu";
+        String html = "<p>Xin chào,</p>" +
+                "<p>Mã xác thực để đặt lại mật khẩu của bạn là:</p>" +
+                "<h2>" + otpCode + "</h2>" +
+                "<p>Mã này có hiệu lực trong vòng <strong>10 phút</strong>.</p>" +
+                "<p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>" +
+                "<br><p>Trân trọng,<br>Hoang Ha website</p>";
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, "Hoang Ha website");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            throw new RuntimeException("Gửi email thất bại: " + e.getMessage(), e);
         }
-        return "Otp verification failed. Try again later";
+
     }
 }
