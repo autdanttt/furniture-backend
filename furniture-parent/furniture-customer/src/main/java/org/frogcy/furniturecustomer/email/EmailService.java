@@ -1,10 +1,16 @@
-package org.frogcy.furniturecustomer.auth;
+package org.frogcy.furniturecustomer.email;
 
 import io.jsonwebtoken.Claims;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.validation.Valid;
 import org.frogcy.furniturecommon.entity.Customer;
+import org.frogcy.furniturecommon.entity.Otp;
+import org.frogcy.furniturecommon.entity.OtpType;
+import org.frogcy.furniturecustomer.auth.dto.OtpVerifyRequestDTO;
 import org.frogcy.furniturecustomer.customer.CustomerRepository;
+import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
+import org.frogcy.furniturecustomer.otp.OtpService;
 import org.frogcy.furniturecustomer.security.jwt.JwtUtility;
 import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +20,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 
 @Service
 public class EmailService {
@@ -26,6 +33,8 @@ public class EmailService {
     private JavaMailSender mailSender;
     @Value("${spring.mail.username}")
     private String fromEmail;
+    @Autowired
+    private OtpService otpService;
 
 
     public void sendVerificationEmail(String to, String token) {
@@ -37,7 +46,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail, "Chat App");
+            helper.setFrom(fromEmail, "Hoang Ha website");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);
@@ -68,5 +77,41 @@ public class EmailService {
 
         customer.setVerified(true);
         customerRepository.save(customer);
+    }
+
+
+    public void sendOtpVerifyEmail(String to, String otpCode) {
+        String subject = "Mã xác thực email";
+        String html = "<p>Xin chào,</p>" +
+                "<p>Mã xác thực để xác thực email của bạn là:</p>" +
+                "<h2>" + otpCode + "</h2>" +
+                "<p>Mã này có hiệu lực trong vòng <strong>10 phút</strong>.</p>" +
+                "<p>Nếu bạn đã xác thưc, vui lòng bỏ qua email này.</p>" +
+                "<br><p>Trân trọng,<br>Hoang Ha website</p>";
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, "Hoang Ha website");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            throw new RuntimeException("Gửi email thất bại: " + e.getMessage(), e);
+        }
+    }
+
+    public String verifyEmailByOtp(OtpVerifyRequestDTO dto) {
+        Customer customer = customerRepository.findCustomerByEmailAndVerifiedIsFalse(dto.getEmail()).orElseThrow(
+                () -> new CustomerNotFoundException("Customer not found with email " + dto.getEmail())
+        );
+
+        if(otpService.verifyOtp(customer, dto.getOtp(), OtpType.REGISTER)){
+            return "Otp verification success";
+        }
+        return "Otp verification failed. Try again later";
     }
 }

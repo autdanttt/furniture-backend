@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecustomer.auth.RefreshTokenNotFoundException;
 import org.frogcy.furniturecustomer.customer.CustomerAlreadyExistException;
+import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
 import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public ErrorDTO handleRefreshTokenNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
+    @ExceptionHandler(CustomerNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleCustomerNotFoundException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());

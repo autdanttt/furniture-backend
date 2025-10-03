@@ -23,6 +23,7 @@ public class Otp {
     private String code;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private OtpType type;
 
     private Date expiresAt;

@@ -1,21 +1,17 @@
 package org.frogcy.furniturecustomer.auth;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.Role;
 import org.frogcy.furniturecustomer.auth.dto.*;
 import org.frogcy.furniturecustomer.customer.CustomerService;
+import org.frogcy.furniturecustomer.email.EmailService;
+import org.frogcy.furniturecustomer.otp.OtpService;
 import org.frogcy.furniturecustomer.security.CustomUserDetails;
 import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
-import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +43,8 @@ public class AuthController {
     private CustomerService customerService;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private OtpService otpService;
 
     @PostMapping("/token/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenDTO token, HttpServletRequest request, HttpServletResponse response) {
@@ -150,14 +148,27 @@ public class AuthController {
                 ));
     }
 
-    @GetMapping("/verify")
-    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
-        try {
-            emailService.verifyEmail(token);
-            return ResponseEntity.ok("Xác thực tài khoản thành công!");
-        } catch (JwtValidationException | IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+
+
+//    Verify with link
+//    @GetMapping("/verify")
+//    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
+//        try {
+//            emailService.verifyEmail(token);
+//            return ResponseEntity.ok("Xác thực tài khoản thành công!");
+//        } catch (JwtValidationException | IllegalArgumentException | IllegalStateException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+
+
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestBody @Valid OtpVerifyRequestDTO dto) {
+        String message = emailService.verifyEmailByOtp(dto);
+        Map<String, String> result = new HashMap<>();
+        result.put("message", message);
+
+        return ResponseEntity.ok(result);
     }
 
 }
