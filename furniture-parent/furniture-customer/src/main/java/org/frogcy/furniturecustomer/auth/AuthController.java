@@ -7,11 +7,12 @@ import jakarta.validation.Valid;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.Role;
 import org.frogcy.furniturecustomer.auth.dto.*;
+import org.frogcy.furniturecustomer.customer.CustomerRepository;
 import org.frogcy.furniturecustomer.customer.CustomerService;
+import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
 import org.frogcy.furniturecustomer.email.EmailService;
 import org.frogcy.furniturecustomer.otp.OtpService;
 import org.frogcy.furniturecustomer.security.CustomUserDetails;
-import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,6 +48,10 @@ public class AuthController {
     private EmailService emailService;
     @Autowired
     private OtpService otpService;
+    @Autowired
+    private CustomerRepository customerRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/token/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenDTO token, HttpServletRequest request, HttpServletResponse response) {
@@ -169,6 +176,27 @@ public class AuthController {
         result.put("message", message);
 
         return ResponseEntity.ok(result);
+    }
+
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody @Valid ChangePasswordRequest request){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer = customerRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found: " + email));
+        if(!passwordEncoder.matches(request.getOldPassword(), customer.getPassword())){
+            Map<String, String> map = new HashMap<>();
+            map.put("message", "Mật khẩu cũ không đúng");
+
+            return ResponseEntity.badRequest().body(map);
+        }
+
+        customer.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        customerRepository.save(customer);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message", "Đổi mật khẩu thành công");
+        return ResponseEntity.ok(map);
     }
 
 }
