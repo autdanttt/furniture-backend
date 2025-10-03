@@ -85,4 +85,15 @@ public class JwtUtility {
     public void setAccessTokenExpiration(int accessTokenExpiration) {
         this.accessTokenExpiration = accessTokenExpiration;
     }
+
+    public String generateEmailVerificationToken(Customer customer) {
+        return Jwts.builder()
+                .subject(customer.getEmail())
+                .claim("type", "email_verification")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600_000)) // 1 giờ
+                .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()), Jwts.SIG.HS512)
+                .compact();
+    }
+
 }

@@ -1,13 +1,21 @@
 package org.frogcy.furniturecustomer.auth;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.Role;
+import org.frogcy.furniturecustomer.auth.dto.*;
 import org.frogcy.furniturecustomer.customer.CustomerService;
 import org.frogcy.furniturecustomer.security.CustomUserDetails;
+import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +24,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +43,10 @@ public class AuthController {
 
     @Autowired
     private CustomerService service;
+    @Autowired
+    private CustomerService customerService;
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping("/token/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenDTO token, HttpServletRequest request, HttpServletResponse response) {
@@ -126,4 +135,29 @@ public class AuthController {
         loginDTO.setRoles(rolesDTO);
         return loginDTO;
     }
+
+
+    @PostMapping(value = "/register")
+    public ResponseEntity<?> register(@RequestBody @Valid CustomerRegisterDTO dto){
+
+        customerService.registerUser(dto);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of(
+                        "message", "Đăng ký thành công. Vui lòng kiểm tra email để xác thực.",
+                        "email", dto.getEmail()
+                ));
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
+        try {
+            emailService.verifyEmail(token);
+            return ResponseEntity.ok("Xác thực tài khoản thành công!");
+        } catch (JwtValidationException | IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

@@ -2,7 +2,9 @@ package org.frogcy.furniturecustomer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecustomer.auth.RefreshTokenNotFoundException;
+import org.frogcy.furniturecustomer.customer.CustomerAlreadyExistException;
 import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +30,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(CustomerAlreadyExistException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorDTO handleCustomerAlreadyExistsException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
 
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.CONFLICT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
 
     @ExceptionHandler(RefreshTokenNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -107,8 +122,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         LOGGER.error(ex.getMessage(), ex);
         return error;
     }
-
-
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
