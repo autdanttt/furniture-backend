@@ -1,4 +1,4 @@
-package org.frogcy.furniturecustomer.auth;
+package org.frogcy.furniturecustomer.auth.dto;
 
 import lombok.Getter;
 import lombok.Setter;

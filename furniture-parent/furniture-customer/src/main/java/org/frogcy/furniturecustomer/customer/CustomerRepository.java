@@ -18,4 +18,6 @@ public interface CustomerRepository extends JpaRepository<Customer,Integer> {
 
     @Query("SELECT c FROM Customer c WHERE c.email= ?1 AND c.deleted = false")
     public Customer getUserByEmail(String email);
+
+    Optional<Customer> findCustomerByEmailAndVerifiedIsFalse(String email);
 }

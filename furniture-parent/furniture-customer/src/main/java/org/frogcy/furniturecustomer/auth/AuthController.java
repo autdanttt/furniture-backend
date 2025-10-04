@@ -6,7 +6,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.Role;
+import org.frogcy.furniturecustomer.auth.dto.*;
+import org.frogcy.furniturecustomer.customer.CustomerRepository;
 import org.frogcy.furniturecustomer.customer.CustomerService;
+import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
+import org.frogcy.furniturecustomer.email.EmailService;
+import org.frogcy.furniturecustomer.otp.OtpService;
 import org.frogcy.furniturecustomer.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,11 +20,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +42,16 @@ public class AuthController {
 
     @Autowired
     private CustomerService service;
+    @Autowired
+    private CustomerService customerService;
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private OtpService otpService;
+    @Autowired
+    private CustomerRepository customerRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/token/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenDTO token, HttpServletRequest request, HttpServletResponse response) {
@@ -126,4 +140,88 @@ public class AuthController {
         loginDTO.setRoles(rolesDTO);
         return loginDTO;
     }
+
+
+    @PostMapping(value = "/register")
+    public ResponseEntity<?> register(@RequestBody @Valid CustomerRegisterDTO dto){
+
+        customerService.registerUser(dto);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of(
+                        "message", "Đăng ký thành công. Vui lòng kiểm tra email để xác thực.",
+                        "email", dto.getEmail()
+                ));
+    }
+
+
+
+//    Verify with link
+//    @GetMapping("/verify")
+//    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
+//        try {
+//            emailService.verifyEmail(token);
+//            return ResponseEntity.ok("Xác thực tài khoản thành công!");
+//        } catch (JwtValidationException | IllegalArgumentException | IllegalStateException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+
+
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestBody @Valid OtpVerifyRequestDTO dto) {
+        String message = customerService.verifyEmailByOtp(dto);
+        Map<String, String> result = new HashMap<>();
+        result.put("message", message);
+
+        return ResponseEntity.ok(result);
+    }
+
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody @Valid ChangePasswordRequest request){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Customer customer = customerRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found: " + email));
+        if(!passwordEncoder.matches(request.getOldPassword(), customer.getPassword())){
+            Map<String, String> map = new HashMap<>();
+            map.put("message", "Mật khẩu cũ không đúng");
+
+            return ResponseEntity.badRequest().body(map);
+        }
+
+        customer.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        customerRepository.save(customer);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message", "Đổi mật khẩu thành công");
+        return ResponseEntity.ok(map);
+    }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body){
+
+        String email = body.get("email");
+
+        customerService.forgotPassword(email);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message","Nếu email tồn tại, mã OTP đã được gửi");
+
+        return ResponseEntity.ok(map);
+    }
+
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordByOtpRequest request){
+        String message = customerService.resetPasswordByOtp(request);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message", message);
+
+        return ResponseEntity.ok(map);
+    }
+
 }

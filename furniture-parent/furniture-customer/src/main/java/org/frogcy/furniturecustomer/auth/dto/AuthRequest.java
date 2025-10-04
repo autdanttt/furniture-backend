@@ -1,23 +1,18 @@
-package org.frogcy.furniturecustomer.auth;
+package org.frogcy.furniturecustomer.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class RefreshTokenRequest {
+public class AuthRequest {
     @NotNull
     @Email
     private String email;
     @NotNull
-    @Length(min = 36, max = 50)
-    private String refreshToken;
-
+    @Length(min = 5, max = 50)
+    private String password;
 }
