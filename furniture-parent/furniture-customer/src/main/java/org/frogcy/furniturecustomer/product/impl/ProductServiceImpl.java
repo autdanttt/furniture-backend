@@ -1,11 +1,11 @@
 package org.frogcy.furniturecustomer.product.impl;
 
 import org.frogcy.furniturecommon.entity.product.Product;
+import org.frogcy.furniturecommon.entity.product.ProductImage;
 import org.frogcy.furniturecustomer.PageResponseDTO;
-import org.frogcy.furniturecustomer.product.ProductRepository;
-import org.frogcy.furniturecustomer.product.ProductService;
-import org.frogcy.furniturecustomer.product.dto.ProductMapper;
-import org.frogcy.furniturecustomer.product.dto.ProductSummaryDTO;
+import org.frogcy.furniturecustomer.inventory.InventoryService;
+import org.frogcy.furniturecustomer.product.*;
+import org.frogcy.furniturecustomer.product.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,16 +13,28 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final ProductImageMapper productImageMapper;
+    private final ProductDetailMapper productDetailMapper;
+    private final ProductImageRepository productImageRepository;
+    private final ProductDetailRepository productDetailRepository;
+    private final InventoryService inventoryService;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper) {
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, ProductImageMapper productImageMapper, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageRepository productImageRepository, InventoryService inventoryService) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
+        this.productImageMapper = productImageMapper;
+        this.productDetailMapper = productDetailMapper;
+        this.productDetailRepository = productDetailRepository;
+        this.productImageRepository = productImageRepository;
+        this.inventoryService = inventoryService;
     }
 
     @Override
@@ -71,5 +83,37 @@ public class ProductServiceImpl implements ProductService {
                 pageResult.getTotalElements(),
                 pageResult.getTotalPages()
         );
-    };
+    }
+
+    @Override
+    public ProductResponseDTO get(Integer id) {
+        Product product = productRepository.findById(id).orElseThrow(
+                () -> new ProductNotFoundException("Product not found with id: " + id)
+        );
+
+        return getProductResponseDTO(product);
+    }
+
+    private ProductResponseDTO getProductResponseDTO(Product product) {
+        ProductResponseDTO productResponseDTO = productMapper.toDto(product);
+
+        productResponseDTO.setInStock(inventoryService.inStock(product));
+
+        List<ProductImageDTO> productImageDTOs = new ArrayList<>();
+        List<ProductImage> listProductImages = productImageRepository.findAllByProductId(product.getId());
+        listProductImages.sort(Comparator.comparing(ProductImage::getPosition));
+        for (ProductImage productImage : listProductImages) {
+            ProductImageDTO productImageDTO = productImageMapper.toDTO(productImage);
+            productImageDTOs.add(productImageDTO);
+        }
+        productResponseDTO.setImages(productImageDTOs);
+
+
+        List<ProductDetailDTO> productDetailDTOs = productDetailRepository.findAllByProductId(product.getId())
+                .stream().map(productDetailMapper::toDTO).toList();
+
+        productResponseDTO.setDetails(productDetailDTOs);
+
+        return productResponseDTO;
+    }
 }

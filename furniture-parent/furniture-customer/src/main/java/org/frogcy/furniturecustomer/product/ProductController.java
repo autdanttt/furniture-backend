@@ -1,12 +1,10 @@
 package org.frogcy.furniturecustomer.product;
 
 import org.frogcy.furniturecustomer.PageResponseDTO;
+import org.frogcy.furniturecustomer.product.dto.ProductResponseDTO;
 import org.frogcy.furniturecustomer.product.dto.ProductSummaryDTO;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,6 +28,13 @@ public class ProductController {
     ) {
         PageResponseDTO<ProductSummaryDTO> response = productService.getAllProduct(page, size, sortField, sortDir, keyword, minPrice, maxPrice, categoryId);
 
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProduct(@PathVariable Integer id) {
+        ProductResponseDTO response = productService.get(id);
         return ResponseEntity.ok(response);
     }
 }

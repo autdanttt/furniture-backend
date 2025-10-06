@@ -9,5 +9,7 @@ import org.mapstruct.factory.Mappers;
 public interface ProductMapper {
     ProductMapper INSTANCE = Mappers.getMapper(ProductMapper.class);
 
+    ProductResponseDTO toDto(Product product);
+
     ProductSummaryDTO toSummaryDTO(Product product);
 }
