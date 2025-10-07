@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecustomer.auth.RefreshTokenNotFoundException;
+import org.frogcy.furniturecustomer.cart.CartItemNotFoundException;
 import org.frogcy.furniturecustomer.customer.CustomerAlreadyExistException;
 import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
 import org.frogcy.furniturecustomer.product.ProductNotFoundException;
@@ -66,6 +67,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public ErrorDTO handleProductNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(CartItemNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleCartItemNotFoundException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());
