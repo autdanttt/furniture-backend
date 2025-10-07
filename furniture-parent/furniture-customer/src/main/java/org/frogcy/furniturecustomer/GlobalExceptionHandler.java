@@ -4,11 +4,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecustomer.auth.RefreshTokenNotFoundException;
+import org.frogcy.furniturecustomer.cart.CartFullException;
 import org.frogcy.furniturecustomer.cart.CartItemNotFoundException;
+import org.frogcy.furniturecustomer.cart.ProductAlreadyInCartException;
 import org.frogcy.furniturecustomer.customer.CustomerAlreadyExistException;
 import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
 import org.frogcy.furniturecustomer.product.ProductNotFoundException;
 import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
+import org.frogcy.furniturecustomer.shippingfee.CartEmptyException;
+import org.frogcy.furniturecustomer.shippingfee.ShippingNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -42,6 +46,65 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         error.setTimestamp(new Date());
         error.setStatus(HttpStatus.CONFLICT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+    @ExceptionHandler(CartFullException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleCartFullException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(ProductAlreadyInCartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleProductAlreadyInCartException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(CartEmptyException.class)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseBody
+    public ErrorDTO handleCartEmptyException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NO_CONTENT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(ShippingNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleShippingNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
         error.addError(ex.getMessage());
         error.setPath(request.getServletPath());
 
