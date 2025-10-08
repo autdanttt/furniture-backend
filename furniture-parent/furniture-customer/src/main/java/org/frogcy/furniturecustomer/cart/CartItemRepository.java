@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
-    List<CartItem> findByCustomerId(Integer customerId);
+    List<CartItem> findByCustomer(Customer customer);
 
     Optional<CartItem> findByCustomerIdAndProductId(Integer customerId, Integer productId);
 }

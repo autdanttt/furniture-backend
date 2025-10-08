@@ -28,7 +28,7 @@ public class CartItemServiceImpl implements CartItemService {
 
     @Override
     public void addToCart(Customer customer, CartItemRequestDTO request) {
-        List<CartItem> currentItems = cartItemRepository.findByCustomerId(customer.getId());
+        List<CartItem> currentItems = cartItemRepository.findByCustomer(customer);
 
         if (currentItems.size() >= MAX_CART_ITEMS) {
             throw new CartFullException("Giỏ hàng chỉ được chứa tối đa " + MAX_CART_ITEMS + " sản phẩm.");
@@ -61,7 +61,7 @@ public class CartItemServiceImpl implements CartItemService {
     @Override
     public CartSummaryDTO getCartItems(Customer customer) {
 
-        List<CartItem> currentItems = cartItemRepository.findByCustomerId(customer.getId());
+        List<CartItem> currentItems = cartItemRepository.findByCustomer(customer);
 
         List<CartItemResponseDTO> items = currentItems.stream().map(
                 cartItem -> {

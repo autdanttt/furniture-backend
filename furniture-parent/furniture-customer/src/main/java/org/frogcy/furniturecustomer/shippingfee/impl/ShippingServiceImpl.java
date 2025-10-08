@@ -28,7 +28,7 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     public long calculate(Integer provinceCode, Customer customer) {
-        List<CartItem> cartItems = cartItemRepository.findByCustomerId(customer.getId());
+        List<CartItem> cartItems = cartItemRepository.findByCustomer(customer);
         if (cartItems.isEmpty()) {
             throw new CartEmptyException("No cart items found for customer " + customer.getId());
         }
