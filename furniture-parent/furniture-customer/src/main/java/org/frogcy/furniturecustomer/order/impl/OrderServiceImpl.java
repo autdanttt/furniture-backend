@@ -14,19 +14,14 @@ import org.frogcy.furniturecustomer.inventory.InventoryRepository;
 import org.frogcy.furniturecustomer.order.OrderDetailRepository;
 import org.frogcy.furniturecustomer.order.OrderRepository;
 import org.frogcy.furniturecustomer.order.OrderService;
-import org.frogcy.furniturecustomer.order.dto.OrderRequestDTO;
-import org.frogcy.furniturecustomer.order.dto.OrderResultDTO;
-import org.frogcy.furniturecustomer.order.dto.OrderSummaryDTO;
+import org.frogcy.furniturecustomer.order.dto.*;
 import org.frogcy.furniturecustomer.product.ProductRepository;
 import org.frogcy.furniturecustomer.shippingfee.ShippingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -156,5 +151,67 @@ public class OrderServiceImpl implements OrderService {
         summaryDTO.setSubTotal(subTotal);
         summaryDTO.setItems(countProduct);
         return summaryDTO;
+    }
+
+    @Override
+    public OrderResponseDTO get(Customer customer, Integer id) {
+
+        Order order = orderRepository.findById(id).orElseThrow(() -> new IllegalStateException("No order found for id " + id));
+        OrderResponseDTO dto = getOrderResponseDTO(order);
+
+        return dto;
+    }
+
+    private static OrderResponseDTO getOrderResponseDTO(Order order) {
+        OrderResponseDTO dto = new OrderResponseDTO();
+        dto.setId(order.getId());
+        dto.setFirstName(order.getFirstName());
+        dto.setLastName(order.getLastName());
+        dto.setEmail(order.getEmail());
+        dto.setProvinceName(order.getProvinceName());
+        dto.setWardName(order.getWardName());
+        dto.setAddressLine(order.getAddressLine());
+        dto.setPhoneNumber(order.getPhoneNumber());
+        dto.setShippingCost(order.getShippingCost());
+        dto.setProductCost(order.getProductCost());
+        dto.setSubtotal(order.getSubtotal());
+        dto.setStatus(order.getStatus());
+        dto.setPaymentMethod(order.getPaymentMethod());
+        dto.setTotal(order.getTotal());
+        dto.setOrderTime(order.getOrderTime());
+        dto.setDeliverDays(order.getDeliverDays());
+        dto.setDeliverDate(order.getDeliverDate());
+
+        Set<OrderDetailDTO> details = getOrderDetailDTOS(order);
+
+        dto.setDetails(details);
+        return dto;
+    }
+
+    @Override
+    public List<OrderResponseDTO> getAll(Customer customer) {
+        List<Order> orderList = orderRepository.findAllByCustomerOrderByOrderTimeDesc(customer);
+        List<OrderResponseDTO> orderResponseDTOList = new ArrayList<>();
+        for (Order order : orderList) {
+            OrderResponseDTO responseDTO = getOrderResponseDTO(order);
+            orderResponseDTOList.add(responseDTO);
+        }
+        return orderResponseDTOList;
+    }
+
+    private static Set<OrderDetailDTO> getOrderDetailDTOS(Order order) {
+        Set<OrderDetailDTO> details = new HashSet<>();
+
+        for (OrderDetail orderDetail : order.getOrderDetails()) {
+            OrderDetailDTO detailDTO = new OrderDetailDTO();
+            detailDTO.setProductId(orderDetail.getProduct().getId());
+            detailDTO.setProductName(orderDetail.getProduct().getName());
+            detailDTO.setQuantity(orderDetail.getQuantity());
+            detailDTO.setImageUrl(orderDetail.getProduct().getMainImage().getImageUrl());
+            detailDTO.setPrice(orderDetail.getUnitPrice());
+
+            details.add(detailDTO);
+        }
+        return details;
     }
 }

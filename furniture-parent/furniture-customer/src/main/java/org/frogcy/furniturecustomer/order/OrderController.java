@@ -5,6 +5,7 @@ import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecustomer.customer.CustomerRepository;
 import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
 import org.frogcy.furniturecustomer.order.dto.OrderRequestDTO;
+import org.frogcy.furniturecustomer.order.dto.OrderResponseDTO;
 import org.frogcy.furniturecustomer.order.dto.OrderResultDTO;
 import org.frogcy.furniturecustomer.order.dto.OrderSummaryDTO;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -38,6 +41,22 @@ public class OrderController {
         OrderSummaryDTO summaryDTO = orderService.summaryOrder(customer);
         return new ResponseEntity<>(summaryDTO, HttpStatus.OK);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrder(@PathVariable Integer id) {
+        Customer customer = getCustomer();
+
+        OrderResponseDTO dto = orderService.get(customer,id);
+        return new ResponseEntity<>(dto, HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getOrders() {
+        Customer customer = getCustomer();
+        List<OrderResponseDTO> list = orderService.getAll(customer);
+        return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
 
 
     private Customer getCustomer() {
