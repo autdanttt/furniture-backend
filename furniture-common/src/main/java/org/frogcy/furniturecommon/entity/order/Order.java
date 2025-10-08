@@ -32,6 +32,8 @@ public class Order {
     private Date deliverDate;
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
     @ManyToOne
     @JoinColumn(name = "customer_id")
     private Customer customer;

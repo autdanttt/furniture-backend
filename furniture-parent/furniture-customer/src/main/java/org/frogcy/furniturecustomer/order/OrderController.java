@@ -4,17 +4,16 @@ import jakarta.validation.Valid;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecustomer.customer.CustomerRepository;
 import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
-import org.frogcy.furniturecustomer.order.dto.OrderRequestDTO;
-import org.frogcy.furniturecustomer.order.dto.OrderResponseDTO;
-import org.frogcy.furniturecustomer.order.dto.OrderResultDTO;
-import org.frogcy.furniturecustomer.order.dto.OrderSummaryDTO;
+import org.frogcy.furniturecustomer.order.dto.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -55,6 +54,24 @@ public class OrderController {
         Customer customer = getCustomer();
         List<OrderResponseDTO> list = orderService.getAll(customer);
         return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Integer id) {
+        Customer customer = getCustomer();
+        orderService.cancelOrder(customer, id);
+        Map<String, String> map = new HashMap<>();
+        map.put("message", "Order cancelled");
+        return new ResponseEntity<>(map, HttpStatus.OK);
+    }
+
+
+    @GetMapping("/{orderId}/track")
+    public ResponseEntity<?> trackOrder(@PathVariable Integer orderId) {
+        Customer customer = getCustomer();
+
+        List<OrderTrackResponseDTO> response = orderService.getOrderTracking(orderId, customer);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 

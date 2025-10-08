@@ -9,6 +9,7 @@ import org.frogcy.furniturecustomer.cart.CartItemNotFoundException;
 import org.frogcy.furniturecustomer.cart.ProductAlreadyInCartException;
 import org.frogcy.furniturecustomer.customer.CustomerAlreadyExistException;
 import org.frogcy.furniturecustomer.customer.dto.CustomerNotFoundException;
+import org.frogcy.furniturecustomer.order.OrderNotFoundException;
 import org.frogcy.furniturecustomer.product.ProductNotFoundException;
 import org.frogcy.furniturecustomer.security.jwt.JwtValidationException;
 import org.frogcy.furniturecustomer.shippingfee.CartEmptyException;
@@ -90,6 +91,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         error.setTimestamp(new Date());
         error.setStatus(HttpStatus.NO_CONTENT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleOrderNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
         error.addError(ex.getMessage());
         error.setPath(request.getServletPath());
 
@@ -224,6 +241,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public ErrorDTO handleIllegalArgumentException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDTO handleIllegalStateException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());

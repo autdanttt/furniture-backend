@@ -4,21 +4,17 @@ import jakarta.transaction.Transactional;
 import org.frogcy.furniturecommon.entity.CartItem;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.Inventory;
-import org.frogcy.furniturecommon.entity.order.Order;
-import org.frogcy.furniturecommon.entity.order.OrderDetail;
-import org.frogcy.furniturecommon.entity.order.OrderStatus;
-import org.frogcy.furniturecommon.entity.order.OrderTrack;
+import org.frogcy.furniturecommon.entity.order.*;
 import org.frogcy.furniturecommon.entity.product.Product;
 import org.frogcy.furniturecustomer.cart.CartItemRepository;
 import org.frogcy.furniturecustomer.inventory.InventoryRepository;
-import org.frogcy.furniturecustomer.order.OrderDetailRepository;
-import org.frogcy.furniturecustomer.order.OrderRepository;
-import org.frogcy.furniturecustomer.order.OrderService;
+import org.frogcy.furniturecustomer.order.*;
 import org.frogcy.furniturecustomer.order.dto.*;
 import org.frogcy.furniturecustomer.product.ProductRepository;
 import org.frogcy.furniturecustomer.shippingfee.ShippingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -32,14 +28,18 @@ public class OrderServiceImpl implements OrderService {
     private final ShippingService shippingService;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
+    private final OrderTrackRepository orderTrackRepository;
+    private final OrderTrackMapper orderTrackMapper;
 
-    public OrderServiceImpl(OrderRepository orderRepository, CartItemRepository cartItemRepository, OrderDetailRepository orderDetailRepository, ShippingService shippingService, ProductRepository productRepository, InventoryRepository inventoryRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, CartItemRepository cartItemRepository, OrderDetailRepository orderDetailRepository, ShippingService shippingService, ProductRepository productRepository, InventoryRepository inventoryRepository, OrderTrackRepository orderTrackRepository, OrderTrackMapper orderTrackMapper) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.shippingService = shippingService;
         this.productRepository = productRepository;
         this.inventoryRepository = inventoryRepository;
+        this.orderTrackRepository = orderTrackRepository;
+        this.orderTrackMapper = orderTrackMapper;
     }
 
     @Transactional
@@ -55,6 +55,7 @@ public class OrderServiceImpl implements OrderService {
         order.setPhoneNumber(dto.getPhoneNumber());
         order.setEmail(dto.getEmail());
         order.setPaymentMethod(dto.getPaymentMethod());
+        order.setPaymentStatus(PaymentStatus.PENDING);
         order.setCustomer(customer);
         order.setStatus(OrderStatus.NEW);
         Date now = new Date();
@@ -73,8 +74,6 @@ public class OrderServiceImpl implements OrderService {
             if(inventoryProduct.getQuantity() < item.getQuantity()) {
                 throw new IllegalStateException("Product " + product.getName() + " is out of stock");
             }
-
-
 
             long productCost = item.getQuantity() * product.getFinalPrice();
 
@@ -157,9 +156,8 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponseDTO get(Customer customer, Integer id) {
 
         Order order = orderRepository.findById(id).orElseThrow(() -> new IllegalStateException("No order found for id " + id));
-        OrderResponseDTO dto = getOrderResponseDTO(order);
 
-        return dto;
+        return getOrderResponseDTO(order);
     }
 
     private static OrderResponseDTO getOrderResponseDTO(Order order) {
@@ -177,6 +175,7 @@ public class OrderServiceImpl implements OrderService {
         dto.setSubtotal(order.getSubtotal());
         dto.setStatus(order.getStatus());
         dto.setPaymentMethod(order.getPaymentMethod());
+        dto.setPaymentStatus(order.getPaymentStatus());
         dto.setTotal(order.getTotal());
         dto.setOrderTime(order.getOrderTime());
         dto.setDeliverDays(order.getDeliverDays());
@@ -197,6 +196,83 @@ public class OrderServiceImpl implements OrderService {
             orderResponseDTOList.add(responseDTO);
         }
         return orderResponseDTOList;
+    }
+
+    @Override
+    public void cancelOrder(Customer customer, Integer id) {
+        Order order = orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException("No order found for id " + id));
+        if(!order.getCustomer().getId().equals(customer.getId())) {
+            throw new AccessDeniedException("You are not allowed to cancel this order");
+        }
+
+        if(order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.PROCESSING){
+            throw new IllegalStateException("Cannot cancel order in status: " + order.getStatus());
+        }
+
+        Date now = new Date();
+        if(order.getPaymentMethod() == PaymentMethod.COD){
+            order.setStatus(OrderStatus.CANCELLED);
+            OrderTrack orderTrack = new OrderTrack();
+            orderTrack.setOrder(order);
+            orderTrack.setStatus(OrderStatus.CANCELLED);
+            orderTrack.setNotes("Customer " + customer.getEmail() + " has been cancelled");
+            orderTrack.setUpdatedTime(now);
+            orderTrackRepository.save(orderTrack);
+        }
+
+        // ✅ Nếu thanh toán Online và đã trả tiền → tạo refund
+        else if (order.getPaymentMethod() == PaymentMethod.PAYPAL
+                && order.getPaymentStatus() == PaymentStatus.PAID) {
+
+            order.setPaymentStatus(PaymentStatus.REFUNDING);
+            OrderTrack orderTrack = new OrderTrack();
+            orderTrack.setOrder(order);
+            orderTrack.setStatus(order.getStatus());
+            orderTrack.setNotes("Refund process started");
+            orderTrack.setUpdatedTime(now);
+            orderTrackRepository.save(orderTrack);
+
+            try {
+                // Giả lập gọi đến payment gateway (VD: VNPay, PayOS, MoMo)
+//                paymentGatewayService.refund(order);
+                order.setPaymentStatus(PaymentStatus.REFUNDED);
+                order.setStatus(OrderStatus.REFUNDED);
+
+                OrderTrack orderTrack2 = new OrderTrack();
+                orderTrack2.setOrder(order);
+                orderTrack2.setStatus(OrderStatus.REFUNDED);
+                orderTrack2.setNotes("Customer refunded successfully");
+                orderTrack2.setUpdatedTime(now);
+
+                orderTrackRepository.save(orderTrack2);
+            } catch (Exception e) {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+                throw new IllegalStateException("Refund failed: " + e.getMessage());
+            }
+        }
+        // ✅ Hoàn lại hàng tồn kho nếu đã trừ
+        for (OrderDetail detail : order.getOrderDetails()) {
+            Inventory inv = inventoryRepository.findByProduct(detail.getProduct())
+                    .orElseThrow(() -> new IllegalStateException("Inventory not found for product"));
+            inv.setQuantity(inv.getQuantity() + detail.getQuantity());
+        }
+
+    }
+
+    @Override
+    public List<OrderTrackResponseDTO> getOrderTracking(Integer orderId, Customer customer) {
+        if(orderRepository.findById(orderId).isEmpty()) {
+            throw new OrderNotFoundException("No order found for id " + orderId);
+        }
+        List<OrderTrack> orderTracks = orderTrackRepository.findByOrderIdOrderByUpdatedTimeDesc(orderId);
+
+
+        List<OrderTrackResponseDTO> responseDTOS = new ArrayList<>();
+        for (OrderTrack ot : orderTracks) {
+            OrderTrackResponseDTO dto = orderTrackMapper.toDto(ot);
+            responseDTOS.add(dto);
+        }
+        return responseDTOS;
     }
 
     private static Set<OrderDetailDTO> getOrderDetailDTOS(Order order) {

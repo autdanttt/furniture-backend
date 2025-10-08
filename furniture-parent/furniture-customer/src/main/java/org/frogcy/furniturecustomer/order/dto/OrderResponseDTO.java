@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.frogcy.furniturecommon.entity.order.OrderDetail;
 import org.frogcy.furniturecommon.entity.order.OrderStatus;
 import org.frogcy.furniturecommon.entity.order.PaymentMethod;
+import org.frogcy.furniturecommon.entity.order.PaymentStatus;
 
 import java.util.Date;
 import java.util.List;
@@ -32,5 +33,6 @@ public class OrderResponseDTO {
     private Date deliverDate;
     private OrderStatus status;
     private PaymentMethod paymentMethod;
+    private PaymentStatus paymentStatus;
     private Set<OrderDetailDTO> details;
 }
