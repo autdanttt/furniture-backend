@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.frogcy.furnitureadmin.category.CategoryAlreadyExistsException;
 import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
+import org.frogcy.furnitureadmin.customer.CustomerNotFoundException;
 import org.frogcy.furnitureadmin.inventory.InsufficientStockException;
 import org.frogcy.furnitureadmin.inventory.InventoryNotFoundException;
 import org.frogcy.furnitureadmin.inventory.InventoryTransactionNotFoundException;
@@ -83,6 +84,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         error.setTimestamp(new Date());
         error.setStatus(HttpStatus.FORBIDDEN.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+    @ExceptionHandler(CustomerNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleCustomerNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
         error.addError(ex.getMessage());
         error.setPath(request.getServletPath());
 
