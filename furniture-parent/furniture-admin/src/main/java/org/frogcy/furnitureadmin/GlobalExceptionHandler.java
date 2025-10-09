@@ -7,9 +7,13 @@ import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
 import org.frogcy.furnitureadmin.inventory.InsufficientStockException;
 import org.frogcy.furnitureadmin.inventory.InventoryNotFoundException;
 import org.frogcy.furnitureadmin.inventory.InventoryTransactionNotFoundException;
+import org.frogcy.furnitureadmin.order.dto.OrderNotFoundException;
 import org.frogcy.furnitureadmin.product.ProductAlreadyExistsException;
 import org.frogcy.furnitureadmin.product.ProductNotFoundException;
 import org.frogcy.furnitureadmin.security.jwt.JwtValidationException;
+import org.frogcy.furnitureadmin.shippingfee.ProvinceNotFoundException;
+import org.frogcy.furnitureadmin.shippingfee.ShippingFeeAlreadyExist;
+import org.frogcy.furnitureadmin.shippingfee.ShippingFeeNotFoundException;
 import org.frogcy.furnitureadmin.user.EmailAlreadyExistsException;
 import org.frogcy.furnitureadmin.user.RoleNotFoundException;
 import org.frogcy.furnitureadmin.user.UserNotFoundException;
@@ -20,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -55,10 +60,71 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return error;
     }
 
+    @ExceptionHandler(OrderNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleOrderNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public ErrorDTO handleAccessDeniedException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.FORBIDDEN.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+
     @ExceptionHandler(InventoryNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public ErrorDTO handleInventoryNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(ProvinceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleProvinceNotFoundException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(ShippingFeeNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorDTO handleShippingFeeNotFoundException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());
@@ -163,6 +229,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
     public ErrorDTO handleProductAlreadyExistsException(HttpServletRequest request, Exception ex){
+        ErrorDTO error = new ErrorDTO();
+
+        error.setTimestamp(new Date());
+        error.setStatus(HttpStatus.CONFLICT.value());
+        error.addError(ex.getMessage());
+        error.setPath(request.getServletPath());
+
+        LOGGER.error(ex.getMessage(), ex);
+        return error;
+    }
+
+    @ExceptionHandler(ShippingFeeAlreadyExist.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorDTO handleShippingFeeAlreadyExistsException(HttpServletRequest request, Exception ex){
         ErrorDTO error = new ErrorDTO();
 
         error.setTimestamp(new Date());

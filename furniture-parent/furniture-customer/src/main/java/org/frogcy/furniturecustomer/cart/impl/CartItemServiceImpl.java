@@ -3,9 +3,7 @@ package org.frogcy.furniturecustomer.cart.impl;
 import org.frogcy.furniturecommon.entity.CartItem;
 import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.product.Product;
-import org.frogcy.furniturecustomer.cart.CartItemNotFoundException;
-import org.frogcy.furniturecustomer.cart.CartItemRepository;
-import org.frogcy.furniturecustomer.cart.CartItemService;
+import org.frogcy.furniturecustomer.cart.*;
 import org.frogcy.furniturecustomer.cart.dto.CartItemRequestDTO;
 import org.frogcy.furniturecustomer.cart.dto.CartItemResponseDTO;
 import org.frogcy.furniturecustomer.cart.dto.CartSummaryDTO;
@@ -30,10 +28,10 @@ public class CartItemServiceImpl implements CartItemService {
 
     @Override
     public void addToCart(Customer customer, CartItemRequestDTO request) {
-        List<CartItem> currentItems = cartItemRepository.findByCustomerId(customer.getId());
+        List<CartItem> currentItems = cartItemRepository.findByCustomer(customer);
 
         if (currentItems.size() >= MAX_CART_ITEMS) {
-            throw new IllegalStateException("Giỏ hàng chỉ được chứa tối đa " + MAX_CART_ITEMS + " sản phẩm.");
+            throw new CartFullException("Giỏ hàng chỉ được chứa tối đa " + MAX_CART_ITEMS + " sản phẩm.");
         }
 
         Product product = productRepository.findById(request.getProductId()).orElseThrow(
@@ -46,9 +44,10 @@ public class CartItemServiceImpl implements CartItemService {
                 .findFirst();
 
         if (existingItem.isPresent()) {
-            CartItem item = existingItem.get();
-            item.setQuantity(item.getQuantity() + request.getQuantity());
-            cartItemRepository.save(item);
+            throw new ProductAlreadyInCartException("Sản phẩm này đã có trong giỏ hàng.");
+//            CartItem item = existingItem.get();
+//            item.setQuantity(item.getQuantity() + request.getQuantity());
+//            cartItemRepository.save(item);
         }
 
         // Thêm mới
@@ -62,7 +61,7 @@ public class CartItemServiceImpl implements CartItemService {
     @Override
     public CartSummaryDTO getCartItems(Customer customer) {
 
-        List<CartItem> currentItems = cartItemRepository.findByCustomerId(customer.getId());
+        List<CartItem> currentItems = cartItemRepository.findByCustomer(customer);
 
         List<CartItemResponseDTO> items = currentItems.stream().map(
                 cartItem -> {
