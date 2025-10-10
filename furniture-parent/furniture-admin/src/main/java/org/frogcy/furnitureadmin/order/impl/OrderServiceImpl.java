@@ -5,6 +5,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Refund;
 import com.stripe.param.RefundCreateParams;
 import jakarta.transaction.Transactional;
+import org.apache.commons.codec.binary.Hex;
 import org.frogcy.furnitureadmin.inventory.InventoryRepository;
 import org.frogcy.furnitureadmin.order.OrderRepository;
 import org.frogcy.furnitureadmin.order.OrderService;
@@ -13,6 +14,7 @@ import org.frogcy.furnitureadmin.order.dto.*;
 import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.frogcy.furniturecommon.entity.Inventory;
 import org.frogcy.furniturecommon.entity.order.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +23,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -31,6 +40,16 @@ public class OrderServiceImpl implements OrderService {
     private final OrderTrackRepository orderTrackRepository;
     private final OrderTrackMapper orderTrackMapper;
     private final InventoryRepository inventoryRepository;
+
+
+    @Value("${zalo.app.id}")
+    private String appId;
+
+    @Value("${zalo.app.key.1}")
+    private String key1;
+
+    @Value("${zalo.app.key.2}")
+    private String key2;
 
     public OrderServiceImpl(OrderRepository orderRepository, OrderMapper orderMapper, OrderTrackRepository orderTrackRepository, OrderTrackMapper orderTrackMapper, InventoryRepository inventoryRepository) {
         this.orderRepository = orderRepository;
@@ -143,6 +162,61 @@ public class OrderServiceImpl implements OrderService {
                 // COD không gọi Stripe, hoàn tiền thủ công
                 order.setPaymentStatus(PaymentStatus.REFUNDED);
                 order.setStatus(OrderStatus.RETURNED);
+            }else if(order.getPaymentMethod() == PaymentMethod.ZALOPAY){
+//                System.out.println("Refund request body: " + request);
+
+
+                // --- 1. Lấy thông tin từ request ---
+                String zpTransId = order.getPaymentIntentId(); // Mã giao dịch ZaloPay
+                Long amount = order.getTotal(); // Số tiền muốn hoàn
+                String description = "Chap nhan hoan tien"; // Lý do hoàn tiền
+
+                if (zpTransId == null || amount == null) {
+                    throw new IllegalArgumentException("zp_trans_id, amount, description bắt buộc phải có");
+                }
+
+                // --- 2. Tạo m_refund_id ---
+                TimeZone tz = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+                Calendar calendar = Calendar.getInstance(tz);
+                String yyMMdd = new SimpleDateFormat("yyMMdd").format(calendar.getTime());
+                String mRefundId = yyMMdd + "_" + appId + "_" + System.currentTimeMillis();
+
+                // --- 3. Timestamp hiện tại ---
+                long timestamp = System.currentTimeMillis();
+
+                // --- 4. Tạo hmac_input và mac ---
+                String hmacInput = appId + "|" + zpTransId + "|" + amount + "|" + description + "|" + timestamp;
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(key1.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+                String macValue = Hex.encodeHexString(mac.doFinal(hmacInput.getBytes(StandardCharsets.UTF_8)));
+
+                // --- 5. Chuẩn bị body gửi ZaloPay ---
+                Map<String, Object> body = new HashMap<>();
+                body.put("app_id", Integer.parseInt(appId));
+                body.put("m_refund_id", mRefundId);
+                body.put("zp_trans_id", zpTransId);
+                body.put("amount", amount);
+                body.put("description", description);
+                body.put("timestamp", timestamp);
+                body.put("mac", macValue);
+
+                // --- 6. Gửi request POST sang sandbox ---
+                RestTemplate restTemplate = new RestTemplate();
+                String refundUrl = "https://sb-openapi.zalopay.vn/v2/refund"; // sandbox
+                Map<String, Object> response = restTemplate.postForObject(refundUrl, body, Map.class);
+                Integer responseCode = (Integer) response.get("return_code");
+//                String refundId = (String) response.get("refund_id");
+                if(responseCode == 1){
+                    order.setStatus(OrderStatus.RETURNED);
+                    order.setPaymentStatus(PaymentStatus.REFUNDED);
+                } else if (responseCode == 3) {
+                    order.setStatus(OrderStatus.RETURNED);
+                    order.setPaymentStatus(PaymentStatus.REFUNDING);
+                }else if (responseCode == 2) {
+                    order.setPaymentStatus(PaymentStatus.FAILED);
+                }
+
+                System.out.println("ZaloPay refund response: " + response);
             }
 
             // ✅ Cập nhật lại số lượng hàng trong kho
@@ -162,11 +236,13 @@ public class OrderServiceImpl implements OrderService {
 
             orderRepository.save(order);
 
-        } catch (StripeException e) {
+        } catch (StripeException | NoSuchAlgorithmException e) {
             order.setPaymentStatus(PaymentStatus.FAILED);
             orderRepository.save(order);
 
             throw new IllegalStateException("Stripe refund failed: " + e.getMessage());
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
         }
     }
 
