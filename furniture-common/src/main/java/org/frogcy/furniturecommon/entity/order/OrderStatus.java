@@ -58,18 +58,13 @@ public enum OrderStatus {
             return "Products were returned";
         }
     },
-    PAID{
+    RETURN_REJECTED{
         @Override
         public String defaultDescription() {
-            return "Customer has paid this order";
+            return "Admin rejected return products";
         }
-    },
-    REFUNDED{
-        @Override
-        public String defaultDescription() {
-            return "Customer has been refunded";
-        }
-    };
+    }
+    ;
 
     public abstract String defaultDescription();
 

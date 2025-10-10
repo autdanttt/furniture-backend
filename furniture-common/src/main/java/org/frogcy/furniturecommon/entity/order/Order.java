@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.frogcy.furniturecommon.entity.Customer;
-import org.frogcy.furniturecommon.entity.order.PaymentMethod;
 
 import java.util.*;
 
@@ -30,6 +29,7 @@ public class Order {
     private Long total;
     private int deliverDays;
     private Date deliverDate;
+    private String paymentIntentId;
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
     @Enumerated(EnumType.STRING)
