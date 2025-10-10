@@ -200,63 +200,39 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void cancelOrder(Customer customer, Integer id) {
-        Order order = orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException("No order found for id " + id));
-        if(!order.getCustomer().getId().equals(customer.getId())) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("No order found for id " + id));
+
+        if (!order.getCustomer().getId().equals(customer.getId())) {
             throw new AccessDeniedException("You are not allowed to cancel this order");
         }
 
-        if(order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.PROCESSING){
+        if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.PROCESSING) {
             throw new IllegalStateException("Cannot cancel order in status: " + order.getStatus());
         }
 
         Date now = new Date();
-        if(order.getPaymentMethod() == PaymentMethod.COD){
-            order.setStatus(OrderStatus.CANCELLED);
-            OrderTrack orderTrack = new OrderTrack();
-            orderTrack.setOrder(order);
-            orderTrack.setStatus(OrderStatus.CANCELLED);
-            orderTrack.setNotes("Customer " + customer.getEmail() + " has been cancelled");
-            orderTrack.setUpdatedTime(now);
-            orderTrackRepository.save(orderTrack);
-        }
 
-        // ✅ Nếu thanh toán Online và đã trả tiền → tạo refund
-        else if (order.getPaymentMethod() == PaymentMethod.PAYPAL
+        // ✅ Dù COD hay STRIPE → đều ghi nhận là "Return Requested"
+        order.setStatus(OrderStatus.RETURN_REQUESTED);
+
+        if (order.getPaymentMethod() == PaymentMethod.COD) {
+            order.setPaymentStatus(PaymentStatus.PENDING);
+        } else if (order.getPaymentMethod() == PaymentMethod.STRIPE
                 && order.getPaymentStatus() == PaymentStatus.PAID) {
-
+            // Nếu là Stripe và đã trả tiền -> chờ hoàn tiền
             order.setPaymentStatus(PaymentStatus.REFUNDING);
-            OrderTrack orderTrack = new OrderTrack();
-            orderTrack.setOrder(order);
-            orderTrack.setStatus(order.getStatus());
-            orderTrack.setNotes("Refund process started");
-            orderTrack.setUpdatedTime(now);
-            orderTrackRepository.save(orderTrack);
-
-            try {
-                // Giả lập gọi đến payment gateway (VD: VNPay, PayOS, MoMo)
-//                paymentGatewayService.refund(order);
-                order.setPaymentStatus(PaymentStatus.REFUNDED);
-                order.setStatus(OrderStatus.REFUNDED);
-
-                OrderTrack orderTrack2 = new OrderTrack();
-                orderTrack2.setOrder(order);
-                orderTrack2.setStatus(OrderStatus.REFUNDED);
-                orderTrack2.setNotes("Customer refunded successfully");
-                orderTrack2.setUpdatedTime(now);
-
-                orderTrackRepository.save(orderTrack2);
-            } catch (Exception e) {
-                order.setPaymentStatus(PaymentStatus.FAILED);
-                throw new IllegalStateException("Refund failed: " + e.getMessage());
-            }
-        }
-        // ✅ Hoàn lại hàng tồn kho nếu đã trừ
-        for (OrderDetail detail : order.getOrderDetails()) {
-            Inventory inv = inventoryRepository.findByProduct(detail.getProduct())
-                    .orElseThrow(() -> new IllegalStateException("Inventory not found for product"));
-            inv.setQuantity(inv.getQuantity() + detail.getQuantity());
         }
 
+        // Lưu track log
+        OrderTrack orderTrack = new OrderTrack();
+        orderTrack.setOrder(order);
+        orderTrack.setStatus(order.getStatus());
+        orderTrack.setNotes("Customer requested order cancellation");
+        orderTrack.setUpdatedTime(now);
+
+        orderTrackRepository.save(orderTrack);
+        orderRepository.save(order);
     }
 
     @Override
@@ -273,6 +249,47 @@ public class OrderServiceImpl implements OrderService {
             responseDTOS.add(dto);
         }
         return responseDTOS;
+    }
+
+    @Override
+    public void updatePaymentStatus(String orderId,String paymentIntentId, PaymentStatus paymentStatus) {
+        Order order = orderRepository.findById(Integer.parseInt(orderId)).orElseThrow(
+                ()-> new OrderNotFoundException("No order found for id " + orderId)
+        );
+        order.setPaymentStatus(paymentStatus);
+        order.setPaymentIntentId(paymentIntentId);
+        order.setStatus(OrderStatus.PROCESSING);
+        orderRepository.save(order);
+
+        OrderTrack orderTrack = new OrderTrack();
+        orderTrack.setOrder(order);
+        orderTrack.setStatus(order.getStatus());
+        orderTrack.setNotes("Customer " + order.getCustomer().getEmail() + " has been payment");
+        orderTrack.setUpdatedTime(new Date());
+        orderTrackRepository.save(orderTrack);
+    }
+
+    @Transactional
+    @Override
+    public void updateRefundSuccess(String paymentIntentId, PaymentStatus paymentStatus) {
+        Order order = orderRepository.findByPaymentIntentId(paymentIntentId).orElseThrow(
+                ()-> new OrderNotFoundException("No order found for payment intent id " + paymentIntentId)
+        );
+//        Order order = orderRepository.findById(Integer.parseInt(orderId)).orElseThrow(
+//                ()-> new OrderNotFoundException("No order found for id " + orderId)
+//        );
+        order.setPaymentStatus(paymentStatus);
+        order.setStatus(OrderStatus.RETURNED);
+        orderRepository.save(order);
+
+        OrderTrack orderTrack = new OrderTrack();
+        orderTrack.setOrder(order);
+        orderTrack.setStatus(order.getStatus());
+        orderTrack.setNotes("Customer " + order.getCustomer().getEmail() + " has been refund");
+        orderTrack.setUpdatedTime(new Date());
+        orderTrackRepository.save(orderTrack);
+
+        System.out.println("✅ Refund success updated for orderId=" + order.getId());
     }
 
     private static Set<OrderDetailDTO> getOrderDetailDTOS(Order order) {

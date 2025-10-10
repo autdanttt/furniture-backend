@@ -11,4 +11,8 @@ public interface OrderService {
     void updateStatus(Integer orderId, UpdateOrderStatusRequest request);
 
     OrderResponseDTO get(Integer orderId);
+
+    void approveReturn(Integer orderId, String stripeApiKey);
+
+    void rejectReturn(Integer orderId, String reason);
 }

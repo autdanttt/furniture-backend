@@ -1,11 +1,17 @@
 package org.frogcy.furnitureadmin.order.impl;
 
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Refund;
+import com.stripe.param.RefundCreateParams;
 import jakarta.transaction.Transactional;
+import org.frogcy.furnitureadmin.inventory.InventoryRepository;
 import org.frogcy.furnitureadmin.order.OrderRepository;
 import org.frogcy.furnitureadmin.order.OrderService;
 import org.frogcy.furnitureadmin.order.OrderTrackRepository;
 import org.frogcy.furnitureadmin.order.dto.*;
 import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
+import org.frogcy.furniturecommon.entity.Inventory;
 import org.frogcy.furniturecommon.entity.order.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,12 +30,14 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final OrderTrackRepository orderTrackRepository;
     private final OrderTrackMapper orderTrackMapper;
+    private final InventoryRepository inventoryRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository, OrderMapper orderMapper, OrderTrackRepository orderTrackRepository, OrderTrackMapper orderTrackMapper) {
+    public OrderServiceImpl(OrderRepository orderRepository, OrderMapper orderMapper, OrderTrackRepository orderTrackRepository, OrderTrackMapper orderTrackMapper, InventoryRepository inventoryRepository) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.orderTrackRepository = orderTrackRepository;
         this.orderTrackMapper = orderTrackMapper;
+        this.inventoryRepository = inventoryRepository;
     }
 
     @Override
@@ -108,6 +116,86 @@ public class OrderServiceImpl implements OrderService {
 
         return getOrderResponseDTO(order);
     }
+
+    @Transactional
+    @Override
+    public void approveReturn(Integer orderId, String apiKey) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new OrderNotFoundException("No order found for id " + orderId)
+        );
+
+        Date now = new Date();
+
+        try {
+            // Xử lý hoàn tiền tùy theo phương thức thanh toán
+            if (order.getPaymentMethod() == PaymentMethod.STRIPE) {
+                Stripe.apiKey = apiKey;
+                RefundCreateParams params = RefundCreateParams.builder()
+                        .setPaymentIntent(order.getPaymentIntentId()) // ✅ đúng tên
+                        .build();
+
+                Refund refund = Refund.create(params);
+
+                order.setPaymentStatus(PaymentStatus.REFUNDED); // ✅ Stripe trả kết quả ngay
+                order.setStatus(OrderStatus.RETURNED);
+
+            } else if (order.getPaymentMethod() == PaymentMethod.COD) {
+                // COD không gọi Stripe, hoàn tiền thủ công
+                order.setPaymentStatus(PaymentStatus.REFUNDED);
+                order.setStatus(OrderStatus.RETURNED);
+            }
+
+            // ✅ Cập nhật lại số lượng hàng trong kho
+            for (OrderDetail detail : order.getOrderDetails()) {
+                Inventory inv = inventoryRepository.findByProduct(detail.getProduct())
+                        .orElseThrow(() -> new IllegalStateException("Inventory not found for product"));
+                inv.setQuantity(inv.getQuantity() + detail.getQuantity());
+            }
+
+            // ✅ Lưu track log
+            OrderTrack track = new OrderTrack();
+            track.setOrder(order);
+            track.setStatus(order.getStatus());
+            track.setNotes("Return approved and refunded successfully");
+            track.setUpdatedTime(now);
+            orderTrackRepository.save(track);
+
+            orderRepository.save(order);
+
+        } catch (StripeException e) {
+            order.setPaymentStatus(PaymentStatus.FAILED);
+            orderRepository.save(order);
+
+            throw new IllegalStateException("Stripe refund failed: " + e.getMessage());
+        }
+    }
+
+
+    @Transactional
+    @Override
+    public void rejectReturn(Integer orderId, String reason) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new OrderNotFoundException("No order found for id " + orderId)
+        );
+
+        if (order.getStatus() != OrderStatus.RETURN_REQUESTED) {
+            throw new IllegalStateException("Order status must be RETURN_REQUESTED to reject");
+        }
+
+        // Cập nhật trạng thái đơn hàng
+        order.setStatus(OrderStatus.RETURN_REJECTED);
+        order.setPaymentStatus(PaymentStatus.COMPLETED); // Không hoàn tiền
+        orderRepository.save(order);
+
+        // Ghi lại lịch sử đơn hàng
+        OrderTrack track = new OrderTrack();
+        track.setOrder(order);
+        track.setStatus(OrderStatus.RETURN_REJECTED);
+        track.setNotes("Return request rejected: " + reason);
+        track.setUpdatedTime(new Date());
+        orderTrackRepository.save(track);
+    }
+
 
     private static OrderResponseDTO getOrderResponseDTO(Order order) {
         OrderResponseDTO dto = new OrderResponseDTO();
