@@ -52,13 +52,12 @@ public class SecurityConfig {
     }
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/oauth/**").permitAll() // login, refresh
-                        .requestMatchers("/api/test/admin").hasRole("ADMIN")
-                        .anyRequest().authenticated()
-                )
-                .csrf(csrf -> csrf.disable())
+        http.authorizeHttpRequests(
+                        auth -> auth.requestMatchers("/api/oauth/**").permitAll()
+                                .requestMatchers("/api/checkout/**").permitAll()
+                                .requestMatchers("/api/test/admin").hasAnyRole("ADMIN")
+                                .anyRequest().authenticated()
+                ).csrf(csrf->csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
                     config.setAllowedOrigins(List.of("http://localhost:3000")); // cho phép Next.js
@@ -71,8 +70,6 @@ public class SecurityConfig {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
                 }))
                 .addFilterBefore(jwtFilter, AuthorizationFilter.class);
-
         return http.build();
     }
-
 }

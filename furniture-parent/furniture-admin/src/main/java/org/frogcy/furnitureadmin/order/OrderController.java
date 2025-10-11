@@ -1,10 +1,12 @@
 package org.frogcy.furnitureadmin.order;
 
+import com.stripe.Stripe;
 import org.frogcy.furnitureadmin.order.dto.OrderResponseDTO;
 import org.frogcy.furnitureadmin.order.dto.OrderSummaryDTO;
 import org.frogcy.furnitureadmin.order.dto.UpdateOrderStatusRequest;
 import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.frogcy.furniturecommon.entity.Customer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +22,9 @@ public class OrderController {
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
+
+    @Value("${stripe.api.key}")
+    private String stripeApiKey;
 
     @GetMapping
     public ResponseEntity<?> getOrders(
@@ -48,6 +53,21 @@ public class OrderController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Order status updated");
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/{orderId}/approve-return")
+    public ResponseEntity<?> approveReturn(@PathVariable Integer orderId) {
+        orderService.approveReturn(orderId, stripeApiKey);
+//        Stripe.apiKey = stripeApiKey;
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/{orderId}/reject-return")
+    public ResponseEntity<?> rejectReturn(@PathVariable Integer orderId, Map<String, String> payload) {
+        String reason = payload.get("notes");
+        Stripe.apiKey = stripeApiKey;
+        orderService.rejectReturn(orderId, reason);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 
