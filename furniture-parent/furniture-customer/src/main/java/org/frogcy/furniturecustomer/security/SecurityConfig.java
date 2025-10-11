@@ -16,6 +16,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -49,16 +52,27 @@ public class SecurityConfig {
     }
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/api/oauth/**").permitAll()
-                                .requestMatchers("/api/test/admin").hasAnyRole("ADMIN")
-                                .anyRequest().authenticated()
-                ).csrf(csrf->csrf.disable())
-                .cors(cors -> cors.disable())
+        http
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/oauth/**").permitAll() // login, refresh
+                        .requestMatchers("/api/test/admin").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(List.of("http://localhost:3000")); // cho phép Next.js
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(true); // cần thiết khi bạn dùng cookie refreshToken
+                    return config;
+                }))
                 .exceptionHandling(exh -> exh.authenticationEntryPoint((request, response, authException) -> {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
                 }))
                 .addFilterBefore(jwtFilter, AuthorizationFilter.class);
+
         return http.build();
     }
+
 }

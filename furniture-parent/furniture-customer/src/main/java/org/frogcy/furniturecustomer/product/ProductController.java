@@ -1,10 +1,13 @@
 package org.frogcy.furniturecustomer.product;
 
 import org.frogcy.furniturecustomer.PageResponseDTO;
+import org.frogcy.furniturecustomer.category.dto.CategoryResponseDTO;
 import org.frogcy.furniturecustomer.product.dto.ProductResponseDTO;
 import org.frogcy.furniturecustomer.product.dto.ProductSummaryDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
