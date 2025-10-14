@@ -30,7 +30,7 @@ public class ProvinceSeeder implements CommandLineRunner {
 
         System.out.println("🌱 Seeding provinces and wards from API...");
 
-        String url = "https://provinces.open-api.vn/api/?depth=2";
+        String url = "https://provinces.open-api.vn/api/v2/?depth=2";
         RestTemplate restTemplate = new RestTemplate();
         String json = restTemplate.getForObject(url, String.class);
 
