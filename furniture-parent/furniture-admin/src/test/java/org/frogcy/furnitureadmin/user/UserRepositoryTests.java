@@ -34,7 +34,7 @@ public class UserRepositoryTests {
         Role role = entityManager.find(Role.class, 1);
 
         User user = new User();
-        user.setEmail("admin@admin.com");
+        user.setEmail("admin12@admin.com");
         user.setPassword("$2a$12$0J4wiyUcAJrgU1HScl5iO.xaGuMEGqLcA46iB8mGBZoQV89Kg.Shi");
         user.setFirstName("Mr");
         user.setLastName("Admin");
