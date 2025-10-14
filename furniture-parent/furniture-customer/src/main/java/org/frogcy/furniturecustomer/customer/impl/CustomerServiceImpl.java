@@ -130,4 +130,9 @@ public class CustomerServiceImpl implements CustomerService {
         return customerMapper.toDto(savedCustomer);
     }
 
+    @Override
+    public CustomerResponseDTO getInfo(Customer customer) {
+       return customerMapper.toDto(customer);
+    }
+
 }
