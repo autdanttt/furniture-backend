@@ -1,13 +1,15 @@
 package org.frogcy.furniturecommon.entity.address;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "wards")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Ward {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
