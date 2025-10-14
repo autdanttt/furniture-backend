@@ -12,10 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Objects;
@@ -47,6 +44,13 @@ public class CustomerController {
         CustomerResponseDTO response = customerService.updateInformation(dto, avatar);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/information")
+    public ResponseEntity<?> getInfo(){
+        Customer customer = getCustomer();
+        CustomerResponseDTO responseDTO = customerService.getInfo(customer);
+        return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }
 
     private Customer getCustomer() {
