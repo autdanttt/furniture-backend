@@ -34,7 +34,7 @@ public class UserRepositoryTests {
         Role role = entityManager.find(Role.class, 1);
 
         User user = new User();
-        user.setEmail("adminquang@admin.com");
+        user.setEmail("admin@admin.com");
         user.setPassword("$2a$12$0J4wiyUcAJrgU1HScl5iO.xaGuMEGqLcA46iB8mGBZoQV89Kg.Shi");
         user.setFirstName("Mr");
         user.setLastName("Admin");
@@ -44,7 +44,7 @@ public class UserRepositoryTests {
         user.setCreatedAt(new Date());
         User saved = userRepository.save(user);
 
-        assertThat(saved.getEmail()).isEqualTo("adminquang@admin.com");
+        assertThat(saved.getEmail()).isEqualTo("admin@admin.com");
     }
 
 }

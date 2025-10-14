@@ -21,4 +21,6 @@ public interface CustomerService {
     String verifyEmailByOtp(@Valid OtpVerifyRequestDTO dto);
 
     CustomerResponseDTO updateInformation(@Valid CustomerUpdateDTO dto, MultipartFile avatar);
+
+    CustomerResponseDTO getInfo(Customer customer);
 }
