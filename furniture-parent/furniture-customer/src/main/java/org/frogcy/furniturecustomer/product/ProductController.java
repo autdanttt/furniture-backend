@@ -6,6 +6,8 @@ import org.frogcy.furniturecustomer.product.dto.ProductSummaryDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -36,5 +38,17 @@ public class ProductController {
     public ResponseEntity<?> getProduct(@PathVariable Integer id) {
         ProductResponseDTO response = productService.get(id);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/latest")
+    public ResponseEntity<?> getLatestProduct() {
+        List<ProductSummaryDTO> response = productService.getLatestProduct();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/top-selling")
+    public ResponseEntity<?> getTopSellingProducts(@RequestParam(defaultValue = "14") int days) {
+        List<ProductSummaryDTO> list = productService.getTopSellingProducts(days);
+        return ResponseEntity.ok(list);
     }
 }

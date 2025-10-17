@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query("""
@@ -20,4 +22,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     Page<Product> search(@Param("keyword") String keyword, Pageable pageable);
 
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
+
+    List<Product> findTop10ByOrderByCreatedAtDesc();
 }

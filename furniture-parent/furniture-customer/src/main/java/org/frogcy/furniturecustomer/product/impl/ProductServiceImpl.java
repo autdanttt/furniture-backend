@@ -4,6 +4,7 @@ import org.frogcy.furniturecommon.entity.product.Product;
 import org.frogcy.furniturecommon.entity.product.ProductImage;
 import org.frogcy.furniturecustomer.PageResponseDTO;
 import org.frogcy.furniturecustomer.inventory.InventoryService;
+import org.frogcy.furniturecustomer.order.OrderDetailRepository;
 import org.frogcy.furniturecustomer.product.*;
 import org.frogcy.furniturecustomer.product.dto.*;
 import org.springframework.data.domain.Page;
@@ -13,9 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -26,8 +25,9 @@ public class ProductServiceImpl implements ProductService {
     private final ProductImageRepository productImageRepository;
     private final ProductDetailRepository productDetailRepository;
     private final InventoryService inventoryService;
+    private final OrderDetailRepository orderDetailRepository;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, ProductImageMapper productImageMapper, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageRepository productImageRepository, InventoryService inventoryService) {
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, ProductImageMapper productImageMapper, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageRepository productImageRepository, InventoryService inventoryService, OrderDetailRepository orderDetailRepository) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.productImageMapper = productImageMapper;
@@ -35,6 +35,7 @@ public class ProductServiceImpl implements ProductService {
         this.productDetailRepository = productDetailRepository;
         this.productImageRepository = productImageRepository;
         this.inventoryService = inventoryService;
+        this.orderDetailRepository = orderDetailRepository;
     }
 
     @Override
@@ -92,6 +93,35 @@ public class ProductServiceImpl implements ProductService {
         );
 
         return getProductResponseDTO(product);
+    }
+
+    @Override
+    public List<ProductSummaryDTO> getLatestProduct() {
+        List<Product> products = productRepository.findTop10ByOrderByCreatedAtDesc();
+        return products.stream().map(product -> {
+            ProductSummaryDTO dto = productMapper.toSummaryDTO(product);
+            dto.setMainImageUrl(product.getMainImage().getImageUrl());
+            dto.setCategoryName(product.getCategory().getName());
+            return dto;
+        }).toList();
+    }
+
+    @Override
+    public List<ProductSummaryDTO> getTopSellingProducts(int days) {
+        Date endDate = new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(endDate);
+        cal.add(Calendar.DAY_OF_YEAR, -days);
+        Date startDate = cal.getTime();
+
+        List<Product> list = orderDetailRepository.findTopSellingProducts(startDate, endDate, PageRequest.of(0, 10));
+
+        return list.stream().map(product -> {
+            ProductSummaryDTO dto = productMapper.toSummaryDTO(product);
+            dto.setMainImageUrl(product.getMainImage().getImageUrl());
+            dto.setCategoryName(product.getCategory().getName());
+            return dto;
+        }).toList();
     }
 
     private ProductResponseDTO getProductResponseDTO(Product product) {
