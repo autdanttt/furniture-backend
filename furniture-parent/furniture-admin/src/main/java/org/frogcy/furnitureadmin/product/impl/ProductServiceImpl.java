@@ -4,12 +4,14 @@ import org.frogcy.furnitureadmin.category.CategoryNotFoundException;
 import org.frogcy.furnitureadmin.category.CategoryRepository;
 import org.frogcy.furnitureadmin.category.dto.CategoryMapper;
 import org.frogcy.furnitureadmin.category.dto.CategoryResponseDTO;
+import org.frogcy.furnitureadmin.inventory.InventoryRepository;
 import org.frogcy.furnitureadmin.inventory.InventoryService;
 import org.frogcy.furnitureadmin.media.AssetService;
 import org.frogcy.furnitureadmin.product.*;
 import org.frogcy.furnitureadmin.product.dto.*;
 import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.frogcy.furniturecommon.entity.Category;
+import org.frogcy.furniturecommon.entity.Inventory;
 import org.frogcy.furniturecommon.entity.product.Product;
 import org.frogcy.furniturecommon.entity.product.ProductDetail;
 import org.frogcy.furniturecommon.entity.product.ProductImage;
@@ -40,8 +42,9 @@ public class ProductServiceImpl implements ProductService {
     private final ProductImageMapper productImageMapper;
     private final CategoryMapper categoryMapper;
     private final InventoryService inventoryService;
+    private final InventoryRepository inventoryRepository;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, AssetService assetService, ProductImageRepository productImageRepository, CategoryRepository categoryRepository, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageMapper productImageMapper, CategoryMapper categoryMapper, InventoryService inventoryService) {
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, AssetService assetService, ProductImageRepository productImageRepository, CategoryRepository categoryRepository, ProductDetailMapper productDetailMapper, ProductDetailRepository productDetailRepository, ProductImageMapper productImageMapper, CategoryMapper categoryMapper, InventoryService inventoryService, InventoryRepository inventoryRepository) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.assetService = assetService;
@@ -52,6 +55,7 @@ public class ProductServiceImpl implements ProductService {
         this.productImageMapper = productImageMapper;
         this.categoryMapper = categoryMapper;
         this.inventoryService = inventoryService;
+        this.inventoryRepository = inventoryRepository;
     }
 
     @Override
@@ -102,6 +106,11 @@ public class ProductServiceImpl implements ProductService {
             productDetailRepository.saveAll(productDetails);
             product = productRepository.save(product);
         }
+        Inventory inventory = new Inventory();
+        inventory.setProduct(product);
+        inventory.setQuantity(0);
+
+        inventoryRepository.save(inventory);
 
         return getProductResponseDTO(product);
     }
