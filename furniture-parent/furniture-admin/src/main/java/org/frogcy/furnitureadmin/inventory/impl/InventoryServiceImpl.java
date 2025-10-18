@@ -1,5 +1,6 @@
 package org.frogcy.furnitureadmin.inventory.impl;
 
+import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -155,7 +156,7 @@ public class InventoryServiceImpl implements InventoryService {
             String sortDir,
             String keyword
     ) {
-        // Thiết lập sort direction
+        // Sort direction
         Sort sort = Sort.unsorted();
         if (!"quantity".equalsIgnoreCase(sortField)) {
             sort = sortDir.equalsIgnoreCase("desc")
@@ -166,25 +167,42 @@ public class InventoryServiceImpl implements InventoryService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Specification<Product> spec = (root, query, cb) -> {
-            // Dùng fetch join để tránh N+1 query
-            root.fetch("inventory", JoinType.LEFT);
-            root.fetch("category", JoinType.LEFT);
-            query.distinct(true);
+            // Chỉ fetch inventory (ko fetch category)
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                root.fetch("inventory", JoinType.LEFT);
+                query.distinct(true);
+            }
 
             Join<Product, Inventory> inventoryJoin = root.join("inventory", JoinType.LEFT);
-            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
-
             List<Predicate> predicates = new ArrayList<>();
 
             // Tìm kiếm theo tên sản phẩm
+//            if (keyword != null && !keyword.trim().isEmpty()) {
+//                predicates.add(cb.like(cb.lower(root.get("name")), "%" + keyword.toLowerCase() + "%"));
+//                predicates.add(cb.like(cb.lower(root.get("id")), "%" + keyword.toLowerCase() + "%"));
+//            }
             if (keyword != null && !keyword.trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("name")), "%" + keyword.toLowerCase() + "%"));
+                // Tạo predicate tìm theo tên
+                Predicate byName = cb.like(cb.lower(root.get("name")), "%" + keyword.toLowerCase() + "%");
+
+                // Nếu keyword là số => tìm theo id
+                Predicate byId = null;
+                try {
+                    Integer idValue = Integer.parseInt(keyword.trim());
+                    byId = cb.equal(root.get("id"), idValue);
+                } catch (NumberFormatException ignored) {
+                }
+
+                if (byId != null)
+                    predicates.add(cb.or(byName, byId));
+                else
+                    predicates.add(byName);
             }
 
             // Chỉ lấy sản phẩm chưa bị xóa mềm
             predicates.add(cb.isFalse(root.get("deleted")));
 
-            // Xử lý sort linh hoạt (nếu sortField là quantity thì sort theo inventory.quantity)
+            // Sắp xếp theo quantity hoặc field khác
             if ("quantity".equalsIgnoreCase(sortField)) {
                 query.orderBy(sortDir.equalsIgnoreCase("desc")
                         ? cb.desc(inventoryJoin.get("quantity"))
@@ -206,14 +224,13 @@ public class InventoryServiceImpl implements InventoryService {
                 .map(p -> new ProductInventoryDTO(
                         p.getId(),
                         p.getName(),
-                        p.getMainImage().getImageUrl(),
-                        p.getCategory() != null ? p.getCategory().getName() : null,
+                        p.getMainImage() != null ? p.getMainImage().getImageUrl() : null,
+                        // Bỏ categoryName
                         p.getInventory() != null ? p.getInventory().getQuantity() : 0,
                         p.getInventory() != null ? p.getInventory().getLastUpdated() : null
                 ))
                 .toList();
 
-        // Trả về kết quả phân trang
         return new PageResponseDTO<>(
                 dtos,
                 pageResult.getNumber(),
@@ -222,6 +239,8 @@ public class InventoryServiceImpl implements InventoryService {
                 pageResult.getTotalPages()
         );
     }
+
+
 
     @Override
     public List<InventoryTransactionDTO> getListInventoryTransaction(Integer inventoryId) {
@@ -240,58 +259,6 @@ public class InventoryServiceImpl implements InventoryService {
                }
         ).toList();
     }
-
-//    @Override
-//    public PageResponseDTO<ProductInventoryDTO> getAllInventory(int page, int size, String sortField, String sortDir, String keyword) {
-//        Sort sort = sortDir.equalsIgnoreCase("desc")
-//                ? Sort.by(sortField).descending()
-//                : Sort.by(sortField).ascending();
-//
-//        Pageable pageable = PageRequest.of(page, size, sort);
-//
-//        Specification<Product> spec = (root, query, cb) -> {
-//            // Join Inventory
-//            Join<Product, Inventory> inventoryJoin = root.join("inventory", JoinType.LEFT);
-//            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
-//
-//            List<Predicate> predicates = new ArrayList<>();
-//
-//            if (keyword != null && !keyword.isEmpty()) {
-//                predicates.add(cb.like(cb.lower(root.get("name")), "%" + keyword.toLowerCase() + "%"));
-//            }
-//
-//            predicates.add(cb.isFalse(root.get("deleted")));
-//
-//            // Nếu sort theo quantity
-//            if ("quantity".equalsIgnoreCase(sortField)) {
-//                query.orderBy(sortDir.equalsIgnoreCase("desc")
-//                        ? cb.desc(inventoryJoin.get("quantity"))
-//                        : cb.asc(inventoryJoin.get("quantity")));
-//            }
-//
-//            return cb.and(predicates.toArray(new Predicate[0]));
-//        };
-//
-//        Page<Product> pageResult = productRepository.findAll(spec, pageable);
-//
-//
-//        List<ProductInventoryDTO> dtos = pageResult.getContent().stream()
-//                .map(p -> new ProductInventoryDTO(
-//                        p.getId(),
-//                        p.getName(),
-//                        p.getCategory() != null ? p.getCategory().getName() : null,
-//                        p.getInventory() != null ? p.getInventory().getQuantity() : 0
-//                ))
-//                .toList();
-//
-//        return new PageResponseDTO<>(
-//                dtos,
-//                pageResult.getNumber(),
-//                pageResult.getSize(),
-//                pageResult.getTotalElements(),
-//                pageResult.getTotalPages()
-//        );
-//    }
 
     private void updateProductQuantity(InventoryRequestDTO dto, Product product) {
         Inventory inventory = inventoryRepository.findByProduct(product)

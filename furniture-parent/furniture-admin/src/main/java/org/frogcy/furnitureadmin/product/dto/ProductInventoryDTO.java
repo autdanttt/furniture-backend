@@ -15,7 +15,7 @@ public class ProductInventoryDTO {
     private Integer productId;
     private String productName;
     private String imageUrl;
-    private String categoryName;
+//    private String categoryName;
     private Integer quantity;
     private Date lastUpdated;
 }
