@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.frogcy.furniturecommon.entity.AuditableEntity;
 import org.frogcy.furniturecommon.entity.BaseEntity;
 import org.frogcy.furniturecommon.entity.Category;
+import org.frogcy.furniturecommon.entity.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,9 @@ public class Product extends AuditableEntity {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @OneToOne(mappedBy = "product", fetch = FetchType.LAZY)
+    private Inventory inventory;
 
     @PrePersist
     @PreUpdate
