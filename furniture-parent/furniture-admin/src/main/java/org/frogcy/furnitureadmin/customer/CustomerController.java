@@ -7,6 +7,7 @@ import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.frogcy.furniturecommon.entity.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ public class CustomerController {
         this.userRepository = userRepository;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORDER_MANAGER','ASSISTANT')")
     @GetMapping
     public ResponseEntity<?> getCustomers(
             @RequestParam(defaultValue = "0") int page,
@@ -34,6 +36,7 @@ public class CustomerController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','ASSISTANT')")
     @PatchMapping("/{customerId}/enabled")
     public ResponseEntity<?> changeEnabled(@PathVariable("customerId") Integer customerId, @RequestParam boolean enabled){
         customerService.changeEnabled(customerId, enabled);
@@ -41,6 +44,7 @@ public class CustomerController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','ASSISTANT')")
     @DeleteMapping("/{customerId}")
     public  ResponseEntity<?> delete(@PathVariable("customerId") Integer customerId){
         User user = getUser();
