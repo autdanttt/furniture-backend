@@ -6,6 +6,8 @@ import com.stripe.model.Refund;
 import com.stripe.param.RefundCreateParams;
 import jakarta.transaction.Transactional;
 import org.apache.commons.codec.binary.Hex;
+import org.frogcy.furnitureadmin.dashboard.dto.CategoryStatsDataPoint;
+import org.frogcy.furnitureadmin.dashboard.dto.StatsPeriod;
 import org.frogcy.furnitureadmin.inventory.InventoryRepository;
 import org.frogcy.furnitureadmin.order.OrderRepository;
 import org.frogcy.furnitureadmin.order.OrderService;
@@ -31,6 +33,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 @Service

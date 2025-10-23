@@ -48,4 +48,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     Page<Product> searchWithInventory(@Param("keyword") String keyword, Pageable pageable);
 
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
+
+    long countByDeletedFalse();
 }

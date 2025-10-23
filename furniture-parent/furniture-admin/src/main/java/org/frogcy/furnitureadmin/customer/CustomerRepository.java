@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
 
@@ -18,4 +20,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
         OR LOWER(c.phoneNumber) LIKE LOWER(CONCAT(:keyword, '%'))
 """)
     Page<Customer> search(String keyword, Pageable pageable);
+
+    long countByDeletedFalse();
+
+    List<Customer> findByDeletedFalseOrderByCreatedAtDesc(Pageable pageable);
 }
