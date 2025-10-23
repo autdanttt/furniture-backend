@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductDetailDTO {
-//    private Integer id;
+    private Integer id;
     private String name;
     private String value;
 }

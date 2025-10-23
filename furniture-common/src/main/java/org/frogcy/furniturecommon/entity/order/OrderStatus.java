@@ -63,8 +63,7 @@ public enum OrderStatus {
         public String defaultDescription() {
             return "Admin rejected return products";
         }
-    }
-    ;
+    };
 
     public abstract String defaultDescription();
 

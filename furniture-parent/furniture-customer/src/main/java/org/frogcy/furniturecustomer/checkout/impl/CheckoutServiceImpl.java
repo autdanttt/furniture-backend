@@ -54,7 +54,8 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:3000/checkout/success")
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                .setSuccessUrl("http://localhost:3000/order")
                 .setCancelUrl("http://localhost:3000/checkout/cancel")
                 .addAllLineItem(lineItems)
                 .putMetadata("orderId", order.getId().toString())
