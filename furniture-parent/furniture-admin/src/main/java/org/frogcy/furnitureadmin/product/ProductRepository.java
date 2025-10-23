@@ -36,4 +36,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
         AND p.deleted = false
 """)
     Page<Product> search(@Param("keyword") String keyword, Pageable pageable);
+
+    long countByDeletedFalse();
 }

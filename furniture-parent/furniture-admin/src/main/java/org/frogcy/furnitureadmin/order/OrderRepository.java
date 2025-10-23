@@ -1,6 +1,7 @@
 package org.frogcy.furnitureadmin.order;
 
 import org.frogcy.furniturecommon.entity.order.Order;
+import org.frogcy.furniturecommon.entity.order.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,19 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
          
 """)
     Page<Order> search(String keyword, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status = :status")
+    long sumTotalByStatus(OrderStatus status);
+
+    @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status = :orderStatus")
+    long countByStatus(OrderStatus orderStatus);
+
+//    @Query("""
+//    SELECT COALESCE(SUM(o.total), 0)
+//    FROM Order o
+//    WHERE o.status IN (
+//        org.frogcy.furniturecommon.entity.order.OrderStatus.DELIVERED,
+//    )
+//""")
+//    long sumValidTotal();
 }

@@ -18,4 +18,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
         OR LOWER(c.phoneNumber) LIKE LOWER(CONCAT(:keyword, '%'))
 """)
     Page<Customer> search(String keyword, Pageable pageable);
+
+    long countByDeletedFalse();
+
 }
