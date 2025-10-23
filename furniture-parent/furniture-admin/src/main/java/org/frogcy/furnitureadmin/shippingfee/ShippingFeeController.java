@@ -10,6 +10,7 @@ import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.frogcy.furniturecommon.entity.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,7 @@ public class ShippingFeeController {
         this.userRepository = userRepository;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @GetMapping
     public ResponseEntity<?> getShippingFees(
             @RequestParam(defaultValue = "0") int page,
@@ -38,12 +40,14 @@ public class ShippingFeeController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createShippingFee(@RequestBody @Valid ShippingFeeRequestDTO dto){
         ShippingFeeResponseDTO response = shippingFeeService.create(dto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateShippingFee(@PathVariable Integer id,@RequestBody @Valid ShippingFeeUpdateDTO dto){
         ShippingFeeResponseDTO response = shippingFeeService.update(id,dto);
@@ -52,6 +56,7 @@ public class ShippingFeeController {
 
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteShippingFee(@PathVariable Integer id){
         User user = getUser();

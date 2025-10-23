@@ -10,6 +10,7 @@ import org.frogcy.furnitureadmin.user.dto.UserUpdateDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
@@ -28,6 +29,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createUser(@RequestPart(name = "user") UserCreateDTO userCreateDTO,
                                         @RequestPart(name = "image") @Nullable MultipartFile multipartFile) {
@@ -37,6 +39,7 @@ public class UserController {
     }
 
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateUser(@RequestPart(name = "user") @Valid UserUpdateDTO userUpdateDTO,
                                         @RequestPart(name = "image") @Nullable MultipartFile multipartFile) {
@@ -45,6 +48,7 @@ public class UserController {
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") Integer id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -58,18 +62,21 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable("id") Integer id) {
         UserResponseDTO dto = userService.findById(id);
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<?> changeEnabled(@PathVariable("id") Integer id, @RequestParam boolean enabled) {
         userService.changeEnabled(id, enabled);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @GetMapping
     public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,

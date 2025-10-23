@@ -26,6 +26,7 @@ public class OrderController {
     @Value("${stripe.api.key}")
     private String stripeApiKey;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORDER_MANAGER', 'ASSISTANT', 'SHIPPER')")
     @GetMapping
     public ResponseEntity<?> getOrders(
             @RequestParam(defaultValue = "0") int page,
@@ -40,6 +41,7 @@ public class OrderController {
     }
 
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORDER_MANAGER', 'ASSISTANT', 'SHIPPER')")
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrder(@PathVariable Integer orderId) {
         OrderResponseDTO dto = orderService.get(orderId);
@@ -47,7 +49,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{orderId}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SHIPPER', 'ORDER_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SHIPPER', 'ORDER_MANAGER', 'ASSISTANT')")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Integer orderId, @RequestBody UpdateOrderStatusRequest request){
         orderService.updateStatus(orderId, request);
         Map<String, String> response = new HashMap<>();
@@ -55,6 +57,8 @@ public class OrderController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORDER_MANAGER')")
     @PostMapping("/{orderId}/approve-return")
     public ResponseEntity<?> approveReturn(@PathVariable Integer orderId) {
         orderService.approveReturn(orderId, stripeApiKey);
@@ -62,6 +66,7 @@ public class OrderController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORDER_MANAGER')")
     @PostMapping("/{orderId}/reject-return")
     public ResponseEntity<?> rejectReturn(@PathVariable Integer orderId, Map<String, String> payload) {
         String reason = payload.get("notes");

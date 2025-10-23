@@ -10,6 +10,7 @@ import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
@@ -30,12 +31,14 @@ public class CategoryController {
 
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     public ResponseEntity<?> getCategory(@PathVariable("id") Integer id){
         CategoryResponseDTO dto = categoryService.findById(id);
 
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @GetMapping
     public ResponseEntity<?> getCategories(
             @RequestParam(defaultValue = "0") int page,
@@ -48,6 +51,7 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createCategory(
             @RequestPart(name = "category") @Valid CategoryCreateDTO categoryDto,
@@ -59,6 +63,7 @@ public class CategoryController {
     }
 
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateCategory(
             @RequestPart(name = "category") @Valid CategoryUpdateDTO dto,
@@ -69,6 +74,7 @@ public class CategoryController {
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @PatchMapping("/{id}")
     public ResponseEntity<?> changeEnabled(@PathVariable("id") Integer id, @RequestParam boolean enabled){
 
@@ -77,6 +83,7 @@ public class CategoryController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable("id") Integer id){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

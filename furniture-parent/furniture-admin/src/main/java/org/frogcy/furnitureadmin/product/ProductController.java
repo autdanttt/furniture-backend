@@ -12,6 +12,7 @@ import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
@@ -29,6 +30,7 @@ public class ProductController {
         this.productService = productService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER', 'INVENTORY_MANAGER', 'ORDER_MANAGER', 'ASSISTANT')")
     @GetMapping
     public ResponseEntity<?> getProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -41,6 +43,8 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createProduct(
             @RequestPart("product") @Valid ProductCreateDTO productDto,
@@ -52,6 +56,8 @@ public class ProductController {
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER', 'INVENTORY_MANAGER', 'ORDER_MANAGER', 'ASSISTANT')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getProducts(
             @PathVariable("id") Integer id
@@ -60,6 +66,8 @@ public class ProductController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateProduct(
             @RequestPart("product") @Valid ProductUpdateDTO productDto,
@@ -70,6 +78,8 @@ public class ProductController {
         return new ResponseEntity<>(response, HttpStatus.OK)    ;
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Integer id) {
 
@@ -84,6 +94,8 @@ public class ProductController {
     }
 
 
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PRODUCT_MANAGER')")
     @PatchMapping("/{id}")
     public ResponseEntity<?> changeEnabled(@PathVariable("id") Integer id, @RequestParam("enabled") boolean enabled) {
         productService.changeEnabled(id, enabled);
