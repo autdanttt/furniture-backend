@@ -65,12 +65,22 @@ public class DashboardController {
     }
 
     /**
-     * API mới: Lấy thống kê đơn hàng theo danh mục.
+     * API: Lấy thống kê đơn hàng theo danh mục.
      */
     @GetMapping("/stats/by-category")
     public ResponseEntity<List<CategoryStatsDataPoint>> getCategoryStats(
             @RequestParam(name = "period", defaultValue = "THIS_YEAR") StatsPeriod period) {
         List<CategoryStatsDataPoint> stats = dashboardService.getCategoryStats(period);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * API: Lấy thống kê số lượng đơn hàng theo từng trạng thái.
+     */
+    @GetMapping("/stats/by-status")
+    public ResponseEntity<List<OrderStatusStatsDataPoint>> getOrderStatusStats(
+            @RequestParam(name = "period", defaultValue = "THIS_MONTH") StatsPeriod period) {
+        List<OrderStatusStatsDataPoint> stats = dashboardService.getOrderStatusStats(period);
         return ResponseEntity.ok(stats);
     }
 

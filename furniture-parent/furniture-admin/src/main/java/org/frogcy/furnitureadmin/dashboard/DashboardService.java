@@ -20,4 +20,6 @@ public interface DashboardService {
 
     public List<CategoryStatsDataPoint> getCategoryStats(StatsPeriod period);
 
+    List<OrderStatusStatsDataPoint> getOrderStatusStats(StatsPeriod period);
+
 }

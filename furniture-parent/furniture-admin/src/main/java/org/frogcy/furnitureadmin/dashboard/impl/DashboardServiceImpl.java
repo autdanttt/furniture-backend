@@ -16,10 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -136,6 +133,31 @@ public class DashboardServiceImpl implements DashboardService {
                             // Làm tròn đến 2 chữ số thập phân
                             Math.round(percentage * 100.0) / 100.0
                     );
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<OrderStatusStatsDataPoint> getOrderStatusStats(StatsPeriod period) {
+        // 1. Tái sử dụng logic tính ngày tháng
+        DateRange dateRange = calculateDateRange(period);
+
+        // 2. Lấy kết quả thống kê từ DB
+        List<OrderStatusStatsProjection> projections = orderRepository.findOrderStatusStats(
+                toDate(dateRange.startDate().atStartOfDay()),
+                toDate(dateRange.endDate().plusDays(1).atStartOfDay())
+        );
+
+        // 3. Chuyển kết quả sang một Map để tra cứu nhanh
+        Map<OrderStatus, Long> statsMap = projections.stream()
+                .collect(Collectors.toMap(OrderStatusStatsProjection::getStatus, OrderStatusStatsProjection::getOrderCount));
+
+        // 4. Tạo danh sách cuối cùng, đảm bảo TẤT CẢ các trạng thái đều có mặt
+        return EnumSet.allOf(OrderStatus.class).stream()
+                .map(status -> {
+                    // Lấy số lượng từ Map, nếu không có thì mặc định là 0
+                    Long count = statsMap.getOrDefault(status, 0L);
+                    return new OrderStatusStatsDataPoint(status.name(), count);
                 })
                 .collect(Collectors.toList());
     }

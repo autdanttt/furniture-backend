@@ -1,6 +1,7 @@
 package org.frogcy.furnitureadmin.order;
 
 import org.frogcy.furnitureadmin.dashboard.dto.CategoryStatsProjection;
+import org.frogcy.furnitureadmin.dashboard.dto.OrderStatusStatsProjection;
 import org.frogcy.furnitureadmin.dashboard.dto.StatsDataPoint;
 import org.frogcy.furnitureadmin.dashboard.dto.StatsProjection;
 import org.frogcy.furniturecommon.entity.order.Order;
@@ -70,6 +71,12 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, OrderRep
             "GROUP BY cat.name " +
             "ORDER BY orderCount DESC")
     List<CategoryStatsProjection> findCategoryStats(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
+    @Query("SELECT o.status as status, COUNT(o.id) as orderCount " +
+            "FROM Order o " +
+            "WHERE o.orderTime >= :startDate AND o.orderTime < :endDate " +
+            "GROUP BY o.status")
+    List<OrderStatusStatsProjection> findOrderStatusStats(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
 
 //    /    @Query("""
 //    SELECT COALESCE(SUM(o.total), 0)
