@@ -22,4 +22,6 @@ public interface DashboardService {
 
     List<OrderStatusStatsDataPoint> getOrderStatusStats(StatsPeriod period);
 
+    List<BestSellingProductDataPoint> getBestSellingProducts(StatsPeriod period);
+
 }

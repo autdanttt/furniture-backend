@@ -3,6 +3,7 @@ package org.frogcy.furnitureadmin.dashboard.impl;
 import org.frogcy.furnitureadmin.customer.CustomerRepository;
 import org.frogcy.furnitureadmin.dashboard.DashboardService;
 import org.frogcy.furnitureadmin.dashboard.dto.*;
+import org.frogcy.furnitureadmin.order.OrderDetailRepository;
 import org.frogcy.furnitureadmin.order.OrderRepository;
 import org.frogcy.furnitureadmin.product.ProductRepository;
 import org.frogcy.furniturecommon.entity.order.OrderStatus;
@@ -24,11 +25,13 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
+    private final OrderDetailRepository orderDetailRepository;
 
-    public DashboardServiceImpl(OrderRepository orderRepository, CustomerRepository customerRepository, ProductRepository productRepository) {
+    public DashboardServiceImpl(OrderRepository orderRepository, CustomerRepository customerRepository, ProductRepository productRepository, OrderDetailRepository orderDetailRepository) {
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
+        this.orderDetailRepository = orderDetailRepository;
     }
 
     @Override
@@ -159,6 +162,28 @@ public class DashboardServiceImpl implements DashboardService {
                     Long count = statsMap.getOrDefault(status, 0L);
                     return new OrderStatusStatsDataPoint(status.name(), count);
                 })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BestSellingProductDataPoint> getBestSellingProducts(StatsPeriod period) {
+        // 1. Tính ngày tháng
+        DateRange dateRange = calculateDateRange(period);
+
+        // 2. Gọi repository (không cần Pageable nữa)
+        List<BestSellingProductProjection> projections = orderDetailRepository.findBestSellingProducts(
+                toDate(dateRange.startDate().atStartOfDay()),
+                toDate(dateRange.endDate().plusDays(1).atStartOfDay())
+        );
+
+        // 3. Chuyển đổi sang DTO (giữ nguyên)
+        return projections.stream()
+                .map(p -> new BestSellingProductDataPoint(
+                        p.getProductId(),
+                        p.getProductName(),
+                        p.getMainImageUrl(),
+                        p.getTotalQuantity()
+                ))
                 .collect(Collectors.toList());
     }
 

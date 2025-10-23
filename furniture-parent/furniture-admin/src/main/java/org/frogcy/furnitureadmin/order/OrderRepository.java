@@ -1,9 +1,6 @@
 package org.frogcy.furnitureadmin.order;
 
-import org.frogcy.furnitureadmin.dashboard.dto.CategoryStatsProjection;
-import org.frogcy.furnitureadmin.dashboard.dto.OrderStatusStatsProjection;
-import org.frogcy.furnitureadmin.dashboard.dto.StatsDataPoint;
-import org.frogcy.furnitureadmin.dashboard.dto.StatsProjection;
+import org.frogcy.furnitureadmin.dashboard.dto.*;
 import org.frogcy.furniturecommon.entity.order.Order;
 import org.frogcy.furniturecommon.entity.order.OrderStatus;
 import org.springframework.data.domain.Page;

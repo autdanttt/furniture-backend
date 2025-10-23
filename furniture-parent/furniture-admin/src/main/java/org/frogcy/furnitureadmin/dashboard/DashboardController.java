@@ -84,4 +84,12 @@ public class DashboardController {
         return ResponseEntity.ok(stats);
     }
 
+    @GetMapping("/best-selling-products")
+    public ResponseEntity<List<BestSellingProductDataPoint>> getBestSellingProducts(
+            @RequestParam(name = "period", defaultValue = "THIS_MONTH") StatsPeriod period) {
+
+        List<BestSellingProductDataPoint> products = dashboardService.getBestSellingProducts(period);
+        return ResponseEntity.ok(products);
+    }
+
 }
