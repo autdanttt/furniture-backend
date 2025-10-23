@@ -1,8 +1,6 @@
 package org.frogcy.furnitureadmin.dashboard;
 
-import org.frogcy.furnitureadmin.dashboard.dto.DashboardSummaryDTO;
-import org.frogcy.furnitureadmin.dashboard.dto.GroupByPeriod;
-import org.frogcy.furnitureadmin.dashboard.dto.RevenueStatsDTO;
+import org.frogcy.furnitureadmin.dashboard.dto.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -28,21 +27,41 @@ public class DashboardController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-//    @GetMapping("/revenue")
-//    public ResponseEntity<List<RevenueStatsDTO>> getRevenueStats(
-//            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
-//            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
-//            @RequestParam(defaultValue = "DAY") GroupByPeriod groupBy
-//    ) {
-//        return ResponseEntity.ok(dashboardService.getRevenueStats(startDate, endDate, groupBy));
-//    }
-
-    @GetMapping("/overview-chart")
-    public ResponseEntity<?> getOverviewChart(
-            @RequestParam(defaultValue = "1M") String range
-    ) {
-        return ResponseEntity.ok(dashboardService.getRevenueAndOrders(range));
+    /**
+     * API 1: Lấy thống kê theo các kỳ được định sẵn (tuần này, tháng trước, năm nay...).
+     * @param period (tùy chọn, mặc định là LAST_YEAR)
+     * @return Danh sách các điểm dữ liệu thống kê.
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<List<StatsDataPoint>> getStats(
+            @RequestParam(name = "period", defaultValue = "LAST_YEAR") StatsPeriod period) {
+        List<StatsDataPoint> stats = dashboardService.getRevenueAndOrderStats(period);
+        return ResponseEntity.ok(stats);
     }
 
+    /**
+     * API 2: Lấy thống kê theo giờ trong một ngày cụ thể.
+     * @param date (bắt buộc), định dạng "YYYY-MM-DD"
+     * @return Danh sách 24 điểm dữ liệu thống kê cho 24 giờ.
+     */
+    @GetMapping("/stats/by-day")
+    public ResponseEntity<List<StatsDataPoint>> getHourlyStats(
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<StatsDataPoint> stats = dashboardService.getHourlyStatsForDay(date);
+        return ResponseEntity.ok(stats);
+    }
+    /**
+     * API 3: Lấy thống kê trong một khoảng thời gian tùy chỉnh.
+     * @param startDate (bắt buộc), định dạng "YYYY-MM-DD"
+     * @param endDate (bắt buộc), định dạng "YYYY-MM-DD"
+     * @return Danh sách các điểm dữ liệu thống kê, được nhóm tự động theo ngày hoặc tháng.
+     */
+    @GetMapping("/stats/custom-range")
+    public ResponseEntity<List<StatsDataPoint>> getStatsForCustomRange(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        List<StatsDataPoint> stats = dashboardService.getStatsForCustomRange(startDate, endDate);
+        return ResponseEntity.ok(stats);
+    }
 
 }

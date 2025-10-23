@@ -1,17 +1,21 @@
 package org.frogcy.furnitureadmin.dashboard;
 
-import org.frogcy.furnitureadmin.dashboard.dto.DashboardSummaryDTO;
-import org.frogcy.furnitureadmin.dashboard.dto.GroupByPeriod;
-import org.frogcy.furnitureadmin.dashboard.dto.RevenueOrderStatsDTO;
-import org.frogcy.furnitureadmin.dashboard.dto.RevenueStatsDTO;
+import org.frogcy.furnitureadmin.dashboard.dto.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
 public interface DashboardService {
     DashboardSummaryDTO getSummary();
 
-    public List<RevenueStatsDTO> getRevenueStats(Date startDate, Date endDate, GroupByPeriod groupBy);
+//    public List<RevenueStatsDTO> getRevenueStats(Date startDate, Date endDate, GroupByPeriod groupBy);
 
-    public List<RevenueOrderStatsDTO> getRevenueAndOrders(String range);
+//    public List<RevenueOrderStatsDTO> getRevenueAndOrders(String range);
+     List<StatsDataPoint> getRevenueAndOrderStats(StatsPeriod period);
+
+    public List<StatsDataPoint> getHourlyStatsForDay(LocalDate day);
+
+    List<StatsDataPoint> getStatsForCustomRange(LocalDate startDate, LocalDate endDate);
+
 }
