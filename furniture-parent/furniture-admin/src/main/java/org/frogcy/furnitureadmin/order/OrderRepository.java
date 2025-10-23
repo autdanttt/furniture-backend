@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Integer> {
+public interface OrderRepository extends JpaRepository<Order, Integer>, OrderRepositoryCustom {
     @Query("""
         SELECT o FROM Order o
         WHERE (LOWER(o.firstName) LIKE LOWER(CONCAT('%', :keyword, '%'))
