@@ -54,60 +54,15 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public List<StatsDataPoint> getRevenueAndOrderStats(StatsPeriod period) {
-        LocalDate today = LocalDate.now();
-        LocalDate startDate;
-        LocalDate endDate = today;
+        // 1. Gọi hàm helper để lấy ngày
+        DateRange range = calculateDateRange(period);
 
-        // Mặc định nhóm theo ngày, sẽ thay đổi cho các kỳ dài
-        boolean groupByDay = true;
+        // 2. Xác định cách nhóm dữ liệu
+        boolean groupByDay = period == StatsPeriod.THIS_WEEK || period == StatsPeriod.LAST_WEEK ||
+                period == StatsPeriod.THIS_MONTH || period == StatsPeriod.LAST_MONTH;
 
-        switch (period) {
-            // --- TUẦN ---
-            case THIS_WEEK:
-                startDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-                break;
-            case LAST_WEEK:
-                startDate = today.minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-                endDate = startDate.plusDays(6);
-                break;
-
-            // --- THÁNG ---
-            case THIS_MONTH:
-                startDate = today.with(TemporalAdjusters.firstDayOfMonth());
-                break;
-            case LAST_MONTH:
-                LocalDate lastMonthDate = today.minusMonths(1);
-                startDate = lastMonthDate.with(TemporalAdjusters.firstDayOfMonth());
-                endDate = lastMonthDate.with(TemporalAdjusters.lastDayOfMonth());
-                break;
-
-            // --- QUÝ ---
-            case THIS_QUARTER:
-                startDate = today.with(IsoFields.DAY_OF_QUARTER, 1);
-                groupByDay = false; // Quý thì nên nhóm theo tháng
-                break;
-            case LAST_QUARTER:
-                LocalDate lastQuarterDate = today.minusMonths(3);
-                startDate = lastQuarterDate.with(IsoFields.DAY_OF_QUARTER, 1);
-                endDate = startDate.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth());
-                groupByDay = false; // Quý thì nên nhóm theo tháng
-                break;
-
-            // --- NĂM ---
-            case THIS_YEAR:
-                startDate = today.with(TemporalAdjusters.firstDayOfYear());
-                groupByDay = false; // Năm thì nhóm theo tháng
-                break;
-            case LAST_YEAR:
-            default: // Mặc định là năm trước nếu không khớp
-                LocalDate lastYearDate = today.minusYears(1);
-                startDate = lastYearDate.with(TemporalAdjusters.firstDayOfYear());
-                endDate = lastYearDate.with(TemporalAdjusters.lastDayOfYear());
-                groupByDay = false; // Năm thì nhóm theo tháng
-                break;
-        }
-
-        return getStatsAndFillGaps(startDate, endDate, groupByDay);
+        // 3. Trả về kết quả
+        return getStatsAndFillGaps(range.startDate(), range.endDate(), groupByDay);
     }
 
     @Override
@@ -148,6 +103,41 @@ public class DashboardServiceImpl implements DashboardService {
         boolean groupByDay = daysBetween <= THRESHOLD_IN_DAYS;
 
         return getStatsAndFillGaps(startDate, endDate, groupByDay);
+    }
+
+    @Override
+    public List<CategoryStatsDataPoint> getCategoryStats(StatsPeriod period) {
+        // 1. Lấy ngày bắt đầu, kết thúc (tái sử dụng logic cũ)
+        // Đoạn code này khá dài, nên ta có thể tách ra một hàm riêng
+        DateRange dateRange = calculateDateRange(period);
+
+        // 2. Lấy dữ liệu thô từ repository
+        List<CategoryStatsProjection> projections = orderRepository.findCategoryStats(
+                toDate(dateRange.startDate.atStartOfDay()),
+                toDate(dateRange.endDate.plusDays(1).atStartOfDay())
+        );
+
+        // 3. Tính tổng số đơn hàng
+        long totalOrders = projections.stream()
+                .mapToLong(CategoryStatsProjection::getOrderCount)
+                .sum();
+
+        if (totalOrders == 0) {
+            return new ArrayList<>(); // Trả về rỗng nếu không có đơn hàng nào
+        }
+
+        // 4. Tính toán phần trăm và tạo DTO cuối cùng
+        return projections.stream()
+                .map(proj -> {
+                    double percentage = (proj.getOrderCount() * 100.0) / totalOrders;
+                    return new CategoryStatsDataPoint(
+                            proj.getCategoryName(),
+                            proj.getOrderCount(),
+                            // Làm tròn đến 2 chữ số thập phân
+                            Math.round(percentage * 100.0) / 100.0
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     private List<StatsDataPoint> getStatsAndFillGaps(LocalDate startDate, LocalDate endDate, boolean groupByDay) {
@@ -206,6 +196,62 @@ public class DashboardServiceImpl implements DashboardService {
     private Date toDate(LocalDateTime localDateTime) {
         return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
     }
+
+    /**
+     * Hàm private này chứa toàn bộ logic switch-case để tính toán ngày.
+     * Nó được dùng chung bởi getRevenueAndOrderStats và getCategoryStats.
+     */
+    private DateRange calculateDateRange(StatsPeriod period) {
+        LocalDate today = LocalDate.now();
+        LocalDate startDate;
+        LocalDate endDate = today;
+
+        switch (period) {
+            // --- TUẦN ---
+            case THIS_WEEK:
+                startDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                break;
+            case LAST_WEEK:
+                startDate = today.minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                endDate = startDate.plusDays(6);
+                break;
+
+            // --- THÁNG ---
+            case THIS_MONTH:
+                startDate = today.with(TemporalAdjusters.firstDayOfMonth());
+                break;
+            case LAST_MONTH:
+                LocalDate lastMonthDate = today.minusMonths(1);
+                startDate = lastMonthDate.with(TemporalAdjusters.firstDayOfMonth());
+                endDate = lastMonthDate.with(TemporalAdjusters.lastDayOfMonth());
+                break;
+
+            // --- QUÝ ---
+            case THIS_QUARTER:
+                startDate = today.with(IsoFields.DAY_OF_QUARTER, 1);
+                break;
+            case LAST_QUARTER:
+                LocalDate lastQuarterDate = today.minusMonths(3);
+                startDate = lastQuarterDate.with(IsoFields.DAY_OF_QUARTER, 1);
+                endDate = startDate.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth());
+                break;
+
+            // --- NĂM ---
+            case THIS_YEAR:
+                startDate = today.with(TemporalAdjusters.firstDayOfYear());
+                break;
+            case LAST_YEAR:
+            default:
+                LocalDate lastYearDate = today.minusYears(1);
+                startDate = lastYearDate.with(TemporalAdjusters.firstDayOfYear());
+                endDate = lastYearDate.with(TemporalAdjusters.lastDayOfYear());
+                break;
+        }
+        return new DateRange(startDate, endDate);
+    }
+    // Một record nhỏ để chứa cặp startDate, endDate
+    private record DateRange(LocalDate startDate, LocalDate endDate) {}
+
 
 //    @Override
 //    public List<RevenueStatsDTO> getRevenueStats(Date startDate, Date endDate, GroupByPeriod groupBy) {

@@ -64,4 +64,14 @@ public class DashboardController {
         return ResponseEntity.ok(stats);
     }
 
+    /**
+     * API mới: Lấy thống kê đơn hàng theo danh mục.
+     */
+    @GetMapping("/stats/by-category")
+    public ResponseEntity<List<CategoryStatsDataPoint>> getCategoryStats(
+            @RequestParam(name = "period", defaultValue = "THIS_YEAR") StatsPeriod period) {
+        List<CategoryStatsDataPoint> stats = dashboardService.getCategoryStats(period);
+        return ResponseEntity.ok(stats);
+    }
+
 }

@@ -18,4 +18,6 @@ public interface DashboardService {
 
     List<StatsDataPoint> getStatsForCustomRange(LocalDate startDate, LocalDate endDate);
 
+    public List<CategoryStatsDataPoint> getCategoryStats(StatsPeriod period);
+
 }

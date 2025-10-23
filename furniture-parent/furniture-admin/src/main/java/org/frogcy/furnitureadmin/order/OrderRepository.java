@@ -1,5 +1,6 @@
 package org.frogcy.furnitureadmin.order;
 
+import org.frogcy.furnitureadmin.dashboard.dto.CategoryStatsProjection;
 import org.frogcy.furnitureadmin.dashboard.dto.StatsDataPoint;
 import org.frogcy.furnitureadmin.dashboard.dto.StatsProjection;
 import org.frogcy.furniturecommon.entity.order.Order;
@@ -58,6 +59,18 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, OrderRep
             "GROUP BY FUNCTION('DATE_FORMAT', o.orderTime, '%H') " +
             "ORDER BY FUNCTION('DATE_FORMAT', o.orderTime, '%H') ASC")
     List<StatsProjection> findStatsGroupedByHour(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
+    @Query("SELECT cat.name as categoryName, COUNT(DISTINCT o.id) as orderCount " +
+            "FROM Order o " +
+            "JOIN o.orderDetails od " + // JOIN từ Order -> OrderDetail
+            "JOIN od.product p " +      // JOIN từ OrderDetail -> Product
+            "JOIN p.category cat " +    // JOIN từ Product -> Category
+            "WHERE o.orderTime >= :startDate AND o.orderTime < :endDate " +
+            "AND o.status <> 'CANCELLED' AND o.paymentStatus = 'PAID' " +
+            "GROUP BY cat.name " +
+            "ORDER BY orderCount DESC")
+    List<CategoryStatsProjection> findCategoryStats(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
 //    /    @Query("""
 //    SELECT COALESCE(SUM(o.total), 0)
 //    FROM Order o
