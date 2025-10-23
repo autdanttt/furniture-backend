@@ -6,7 +6,10 @@ import org.frogcy.furnitureadmin.dashboard.dto.*;
 import org.frogcy.furnitureadmin.order.OrderDetailRepository;
 import org.frogcy.furnitureadmin.order.OrderRepository;
 import org.frogcy.furnitureadmin.product.ProductRepository;
+import org.frogcy.furniturecommon.entity.Customer;
 import org.frogcy.furniturecommon.entity.order.OrderStatus;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -185,6 +188,26 @@ public class DashboardServiceImpl implements DashboardService {
                         p.getTotalQuantity()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<NewCustomerDataPoint> getNewCustomers(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Customer> newCustomers = customerRepository.findByDeletedFalseOrderByCreatedAtDesc(pageable);
+
+        return newCustomers.stream()
+                .map(this::convertToNewCustomerDataPoint)
+                .collect(Collectors.toList());
+    }
+    private NewCustomerDataPoint convertToNewCustomerDataPoint(Customer customer) {
+        return new NewCustomerDataPoint(
+                customer.getId(),
+                customer.getCreatedAt(),
+                customer.getFirstName() + " " + customer.getLastName(),
+                customer.getEmail(),
+                customer.getAvatarUrl(),
+                customer.isVerified() // Thay đổi ở đây, lấy trực tiếp
+        );
     }
 
     private List<StatsDataPoint> getStatsAndFillGaps(LocalDate startDate, LocalDate endDate, boolean groupByDay) {

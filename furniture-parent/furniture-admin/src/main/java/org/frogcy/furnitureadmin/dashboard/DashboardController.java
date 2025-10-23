@@ -92,4 +92,12 @@ public class DashboardController {
         return ResponseEntity.ok(products);
     }
 
+    @GetMapping("/new-customers")
+    public ResponseEntity<List<NewCustomerDataPoint>> getNewCustomers(
+            @RequestParam(name = "limit", defaultValue = "5") int limit) {
+
+        List<NewCustomerDataPoint> customers = dashboardService.getNewCustomers(limit);
+        return ResponseEntity.ok(customers);
+    }
+
 }

@@ -24,4 +24,6 @@ public interface DashboardService {
 
     List<BestSellingProductDataPoint> getBestSellingProducts(StatsPeriod period);
 
+    List<NewCustomerDataPoint> getNewCustomers(int limit);
+
 }
