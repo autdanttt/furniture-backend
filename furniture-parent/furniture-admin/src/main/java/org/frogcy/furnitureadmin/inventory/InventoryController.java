@@ -2,10 +2,16 @@ package org.frogcy.furnitureadmin.inventory;
 
 import jakarta.validation.Valid;
 import org.frogcy.furnitureadmin.inventory.dto.InventoryResponseDTO;
+import org.frogcy.furnitureadmin.inventory.dto.InventoryTransactionDTO;
+import org.frogcy.furnitureadmin.product.dto.ProductInventoryDTO;
+import org.frogcy.furnitureadmin.user.dto.PageResponseDTO;
+import org.frogcy.furniturecommon.entity.InventoryTransaction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -15,6 +21,18 @@ public class InventoryController {
 
     public InventoryController(InventoryService inventoryService) {
         this.inventoryService = inventoryService;
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getListInventory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") String sortField,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(defaultValue = "", required = false) String keyword
+    ) {
+        PageResponseDTO<ProductInventoryDTO> response = inventoryService.getAllInventory(page, size, sortField, sortDir, keyword);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{productId}/import")
@@ -41,6 +59,14 @@ public class InventoryController {
         InventoryResponseDTO response = inventoryService.get(productId);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/transaction/{inventoryId}")
+    public ResponseEntity<?> getInventoryTransaction(@PathVariable("inventoryId") Integer inventoryId) {
+        List<InventoryTransactionDTO> list = inventoryService.getListInventoryTransaction(inventoryId);
+
+
+        return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
 }

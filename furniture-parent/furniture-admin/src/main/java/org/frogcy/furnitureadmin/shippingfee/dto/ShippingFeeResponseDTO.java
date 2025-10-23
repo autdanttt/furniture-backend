@@ -12,7 +12,7 @@ import lombok.Setter;
 public class ShippingFeeResponseDTO {
     private Integer id;
     private Integer provinceCode;
+    private String provinceName;
     private Long fee;
     private Integer day;
-    private Boolean deleted;
 }

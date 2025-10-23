@@ -63,7 +63,7 @@ public class CheckoutController {
     private String ngrokDomain;
 
     private final String callbackUrl =  ngrokDomain + "/api/checkout/zalopay/callback";
-    private final String redirectUrl = "http://localhost:3000/checkout/success";
+    private final String redirectUrl = "http://localhost:3000/order";
 
 
 
