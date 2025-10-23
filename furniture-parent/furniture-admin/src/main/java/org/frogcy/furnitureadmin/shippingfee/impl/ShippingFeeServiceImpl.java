@@ -60,6 +60,7 @@ public class ShippingFeeServiceImpl implements ShippingFeeService {
                 .orElseThrow(() -> new ShippingFeeNotFoundException("Shipping fee not found"));
 
         shippingFeeMapper.updateEntityFromDto(dto, fee);
+        shippingFeeRepository.save(fee);
 
         ShippingFeeResponseDTO response = shippingFeeMapper.toDto(fee);
         response.setProvinceCode(fee.getProvince().getCode());
@@ -92,6 +93,7 @@ public class ShippingFeeServiceImpl implements ShippingFeeService {
                 .map(shippingFee -> {
                     ShippingFeeResponseDTO responseDTO = shippingFeeMapper.toDto(shippingFee);
                     responseDTO.setProvinceCode(shippingFee.getProvince().getCode());
+                    responseDTO.setProvinceName(shippingFee.getProvince().getName());
                     return responseDTO;
                 }).toList();
 
