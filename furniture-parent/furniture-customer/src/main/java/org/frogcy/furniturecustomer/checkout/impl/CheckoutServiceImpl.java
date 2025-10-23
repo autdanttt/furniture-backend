@@ -6,6 +6,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.frogcy.furniturecommon.entity.order.Order;
 import org.frogcy.furniturecommon.entity.order.OrderDetail;
+import org.frogcy.furniturecommon.entity.order.PaymentMethod;
 import org.frogcy.furniturecustomer.checkout.CheckoutService;
 import org.frogcy.furniturecustomer.order.OrderNotFoundException;
 import org.frogcy.furniturecustomer.order.OrderRepository;
@@ -54,8 +55,10 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:3000/checkout/success")
-                .setCancelUrl("http://localhost:3000/checkout/cancel")
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.PAYPAL)
+                .setSuccessUrl("http://localhost:3000/order")
+                .setCancelUrl("http://localhost:3000/shopping-cart/checkout/cancel")
                 .addAllLineItem(lineItems)
                 .putMetadata("orderId", order.getId().toString())
                 .build();
