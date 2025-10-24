@@ -22,7 +22,7 @@ public class ProductDetail {
     @Column(nullable = false, length = 256)
     private String name;
 
-    @Column(nullable = false, length = 256)
+    @Column(nullable = false, length = 1080)
     private String value;
 
     @ManyToOne

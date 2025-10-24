@@ -16,6 +16,6 @@ public class ProductDetailCreateDTO {
     @Length(min = 1, max = 256, message = "Name must be between 1-256")
     private String name;
     @NotNull
-    @Length(min = 1, max = 256, message = "Value must be between 1-256")
+    @Length(min = 1, max = 1080 , message = "Value must be between 1-1080")
     private String value;
 }
