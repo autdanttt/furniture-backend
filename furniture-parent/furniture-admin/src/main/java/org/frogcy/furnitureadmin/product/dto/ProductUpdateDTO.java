@@ -29,7 +29,7 @@ public class ProductUpdateDTO {
     @Length(min = 3, max = 512, message = "Short description must be between 3-512 characters")
     private String shortDescription;
     @NotNull(message = "Full Description can not be null")
-    @Length(min = 3, max = 512, message = "Full description must be between 3-512 characters")
+    @Length(min = 3, max = 4096, message = "Full description must be between 3-512 characters")
     private String fullDescription;
     @NotNull
     private boolean enabled;

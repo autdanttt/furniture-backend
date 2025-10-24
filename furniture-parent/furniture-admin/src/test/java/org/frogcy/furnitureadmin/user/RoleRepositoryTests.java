@@ -20,11 +20,11 @@ public class RoleRepositoryTests {
     @Test
     public void testCreateFirstRole(){
     }
-    @Test
-    public void testCreateUserRole() {
-        Role customer = Role.builder().name("ROLE_CUSTOMER").description("Default role for customers with basic access to the system.").build();
-        roleRepository.save(customer);
-    }
+//    @Test
+//    public void testCreateUserRole() {
+//        Role customer = Role.builder().name("ROLE_CUSTOMER").description("Default role for customers with basic access to the system.").build();
+//        roleRepository.save(customer);
+//    }
     @Test
     public void testCreateMultipleRoles(){
         Role admin = Role.builder().name("ROLE_ADMIN").description("Manages entire system.").build();
@@ -36,6 +36,7 @@ public class RoleRepositoryTests {
                 .description("Delivers orders to customers.")
                 .build();
         Role assistant = Role.builder().name("ROLE_ASSISTANT").description("Supports customers, handles issues.").build();
-        roleRepository.saveAll(List.of(admin, productManager, inventoryManager, orderManager, shipper, assistant));
+        Role customer = Role.builder().name("ROLE_CUSTOMER").description("Default role for customers with basic access to the system.").build();
+        roleRepository.saveAll(List.of(admin, productManager, inventoryManager, orderManager, shipper, assistant, customer));
     }
 }
